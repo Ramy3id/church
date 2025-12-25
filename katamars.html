@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>St. Mark Church - Katamars</title>
+    
+    <!-- Vue 3 & Vue I18n -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/vue-i18n@9"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Config (Matches Main Site) -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        coptic: {
+                            burgundy: '#580a0a',
+                            gold: '#c5a059',
+                            beige: '#f9f7f2',
+                            text: '#2d3748',
+                            light: '#ffffff',
+                            gospel: '#c5a059',  /* Gold for Gospel */
+                            epistle: '#580a0a', /* Burgundy for Epistles */
+                            psalm: '#2c5282'    /* Blue for Psalms */
+                        }
+                    },
+                    fontFamily: {
+                        ar: ['Cairo', 'sans-serif'],
+                        arSerif: ['Amiri', 'serif'],
+                        it: ['Lato', 'sans-serif'],
+                        itSerif: ['Playfair Display', 'serif'],
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Shared Styles */
+        body { background-color: #f9f7f2; color: #2d3748; transition: all 0.3s ease; }
+        
+        /* Language Typography */
+        :root[lang="ar"] body { font-family: 'Cairo', sans-serif; }
+        :root[lang="it"] body { font-family: 'Lato', sans-serif; }
+        :root[lang="ar"] h1, :root[lang="ar"] h2, :root[lang="ar"] h3 { font-family: 'Amiri', serif; }
+        :root[lang="it"] h1, :root[lang="it"] h2, :root[lang="it"] h3 { font-family: 'Playfair Display', serif; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #c5a059; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #580a0a; }
+
+        /* Pattern */
+        .bg-pattern {
+            background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 4v12M4 10h12' stroke='%23c5a059' stroke-width='1' opacity='0.15'/%3E%3C/svg%3E");
+        }
+        
+        /* Transitions */
+        .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+        .fade-enter-from, .fade-leave-to { opacity: 0; }
+        
+        .slide-fade-enter-active { transition: all 0.3s ease-out; }
+        .slide-fade-leave-active { transition: all 0.3s cubic-bezier(1, 0.5, 0.8, 1); }
+        .slide-fade-enter-from, .slide-fade-leave-to { transform: translateY(-10px); opacity: 0; }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+
+    <div id="app" class="flex flex-col min-h-screen">
+        
+        <!-- ================= Navbar (Unified) ================= -->
+        <nav class="bg-white shadow-md sticky top-0 z-50">
+            <div class="container mx-auto px-4">
+                <div class="flex justify-between items-center h-20">
+                    <!-- Logo / Brand -->
+                    <div class="flex items-center gap-3 cursor-pointer" @click="handleNavigation({ link: 'index.html' })">
+                        <div class="w-10 h-10 bg-coptic-burgundy text-white rounded-full flex items-center justify-center text-xl shadow-lg border-2 border-coptic-gold">
+                            <i class="fas fa-church"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-coptic-burgundy font-bold text-lg leading-tight">{{ t('churchName') }}</span>
+                            <span class="text-xs text-gray-500">{{ t('city') }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Desktop Menu -->
+                    <div class="hidden md:flex items-center gap-1 lg:gap-4">
+                        <button v-for="item in navItems" :key="item.key" 
+                           @click="handleNavigation(item)"
+                           :class="(item.key === 'katamars') ? 'bg-coptic-burgundy/5 text-coptic-burgundy font-bold' : 'text-coptic-text hover:text-coptic-burgundy hover:bg-gray-50'"
+                           class="px-3 py-2 rounded-md transition font-medium flex items-center gap-2">
+                            <i :class="item.icon" class="text-coptic-gold text-sm"></i>
+                            {{ t(item.key) }}
+                        </button>
+                    </div>
+
+                    <!-- Right Side: Lang Switcher & Mobile Toggle -->
+                    <div class="flex items-center gap-3">
+                        <button @click="toggleLang" class="flex items-center gap-2 px-4 py-1.5 border border-coptic-burgundy/20 rounded-full hover:bg-coptic-burgundy hover:text-white transition text-sm font-bold text-coptic-burgundy">
+                            <i class="fas fa-globe"></i>
+                            <span>{{ locale === 'ar' ? 'Italiano' : 'العربية' }}</span>
+                        </button>
+
+                        <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden text-coptic-burgundy text-2xl p-2">
+                            <i :class="mobileMenuOpen ? 'fas fa-times' : 'fas fa-bars'"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile Menu -->
+            <transition name="fade">
+                <div v-if="mobileMenuOpen" class="md:hidden bg-white border-t border-gray-100 absolute w-full shadow-lg z-50">
+                    <div class="flex flex-col p-4 gap-2">
+                        <button v-for="item in navItems" :key="item.key" 
+                           @click="handleNavigation(item); mobileMenuOpen = false"
+                           class="p-3 hover:bg-gray-50 rounded-lg flex items-center gap-3 text-coptic-burgundy w-full text-start">
+                            <div class="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center">
+                                <i :class="item.icon"></i>
+                            </div>
+                            {{ t(item.key) }}
+                        </button>
+                    </div>
+                </div>
+            </transition>
+        </nav>
+
+        <!-- ================= Main Content ================= -->
+        <main class="flex-grow">
+            
+            <!-- 1. Hero & Date Section -->
+            <section class="bg-coptic-burgundy text-white pt-16 pb-24 relative overflow-hidden">
+                <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/arabesque.png')]"></div>
+                <i class="fas fa-book-bible absolute -bottom-10 -left-10 text-9xl text-white opacity-5 rotate-12"></i>
+                
+                <div class="container mx-auto px-4 text-center relative z-10">
+                    <h1 class="text-4xl md:text-5xl font-bold font-serif mb-4">{{ t('katamarsTitle') }}</h1>
+                    <p class="text-lg text-blue-100 max-w-2xl mx-auto font-light leading-relaxed">
+                        {{ t('katamarsDesc') }}
+                    </p>
+                </div>
+            </section>
+
+            <!-- 2. Date Banner (Floating Card) -->
+            <div class="container mx-auto px-4 relative z-20 -mt-16 mb-12">
+                <div class="bg-white rounded-2xl shadow-xl p-6 border-t-4 border-coptic-gold flex flex-col md:flex-row justify-between items-center gap-6">
+                    
+                    <!-- Date Controls -->
+                    <div class="flex items-center gap-4 order-2 md:order-1">
+                        <button class="w-10 h-10 rounded-full border border-gray-200 hover:bg-coptic-burgundy hover:text-white transition flex items-center justify-center">
+                            <i :class="locale==='ar' ? 'fas fa-chevron-right' : 'fas fa-chevron-left'"></i>
+                        </button>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-coptic-burgundy font-serif">{{ copticDate }}</div>
+                            <div class="text-sm text-gray-500 font-bold">{{ toLocalDigits(currentDate) }}</div>
+                        </div>
+                        <button class="w-10 h-10 rounded-full border border-gray-200 hover:bg-coptic-burgundy hover:text-white transition flex items-center justify-center">
+                            <i :class="locale==='ar' ? 'fas fa-chevron-left' : 'fas fa-chevron-right'"></i>
+                        </button>
+                    </div>
+
+                    <!-- Liturgical Season -->
+                    <div class="order-1 md:order-2 bg-blue-50 px-6 py-2 rounded-full border border-blue-100 flex items-center gap-3">
+                        <i class="fas fa-church text-coptic-burgundy"></i>
+                        <span class="font-bold text-coptic-burgundy text-sm">{{ t('liturgicalSeasonExample') }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Readings Grid -->
+            <section class="pb-16 bg-coptic-beige bg-pattern">
+                <div class="container mx-auto px-4">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        
+                        <!-- Main Content: Readings -->
+                        <div class="lg:col-span-2 space-y-10">
+                            
+                            <!-- Matins Section -->
+                            <div>
+                                <h2 class="text-2xl font-bold text-coptic-burgundy flex items-center gap-2 mb-6 border-b border-coptic-gold/30 pb-2">
+                                    <i class="fas fa-sun text-coptic-gold"></i>
+                                    {{ t('sectionMatins') }}
+                                </h2>
+                                <div class="space-y-4">
+                                    <div v-for="(reading, index) in matinsReadings" :key="'matins'+index" class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                                        <button @click="reading.isOpen = !reading.isOpen" class="w-full flex items-center justify-between p-5 text-start hover:bg-gray-50 transition">
+                                            <div class="flex items-center gap-4">
+                                                <div :class="getReadingIconColor(reading.type)" class="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg">
+                                                    <i :class="reading.icon"></i>
+                                                </div>
+                                                <div>
+                                                    <h3 class="font-bold text-gray-800 text-lg">{{ t(reading.titleKey) }}</h3>
+                                                    <span class="text-xs text-coptic-gold font-bold">{{ toLocalDigits(reading.ref) }}</span>
+                                                </div>
+                                            </div>
+                                            <i :class="reading.isOpen ? 'rotate-180' : ''" class="fas fa-chevron-down text-gray-400 transition-transform duration-300"></i>
+                                        </button>
+                                        <transition name="slide-fade">
+                                            <div v-if="reading.isOpen" class="p-6 bg-gray-50 border-t border-gray-100">
+                                                <p class="text-gray-700 leading-8 text-justify font-serif text-lg mb-4">
+                                                    {{ t(reading.textKey) }}
+                                                </p>
+                                                <button class="text-sm font-bold text-coptic-burgundy hover:underline">{{ t('readFullText') }}</button>
+                                            </div>
+                                        </transition>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Liturgy Section -->
+                            <div>
+                                <h2 class="text-2xl font-bold text-coptic-burgundy flex items-center gap-2 mb-6 border-b border-coptic-gold/30 pb-2">
+                                    <i class="fas fa-wine-glass-alt text-coptic-gold"></i>
+                                    {{ t('sectionLiturgy') }}
+                                </h2>
+                                <div class="space-y-4">
+                                    <div v-for="(reading, index) in liturgyReadings" :key="'liturgy'+index" class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                                        <button @click="reading.isOpen = !reading.isOpen" class="w-full flex items-center justify-between p-5 text-start hover:bg-gray-50 transition">
+                                            <div class="flex items-center gap-4">
+                                                <div :class="getReadingIconColor(reading.type)" class="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg">
+                                                    <i :class="reading.icon"></i>
+                                                </div>
+                                                <div>
+                                                    <h3 class="font-bold text-gray-800 text-lg">{{ t(reading.titleKey) }}</h3>
+                                                    <span class="text-xs text-coptic-gold font-bold">{{ toLocalDigits(reading.ref) }}</span>
+                                                </div>
+                                            </div>
+                                            <i :class="reading.isOpen ? 'rotate-180' : ''" class="fas fa-chevron-down text-gray-400 transition-transform duration-300"></i>
+                                        </button>
+                                        <transition name="slide-fade">
+                                            <div v-if="reading.isOpen" class="p-6 bg-gray-50 border-t border-gray-100">
+                                                <p class="text-gray-700 leading-8 text-justify font-serif text-lg mb-4">
+                                                    {{ t(reading.textKey) }}
+                                                </p>
+                                                <button class="text-sm font-bold text-coptic-burgundy hover:underline">{{ t('readFullText') }}</button>
+                                            </div>
+                                        </transition>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Right Column: Info & Comparison -->
+                        <div class="lg:col-span-1 space-y-6">
+                            
+                            <!-- Liturgical Info Box -->
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 sticky top-24">
+                                <h3 class="font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
+                                    <i class="fas fa-info-circle text-coptic-gold"></i>
+                                    {{ t('infoTitle') }}
+                                </h3>
+                                <p class="text-sm text-gray-600 leading-relaxed mb-4 text-justify">
+                                    {{ t('infoText') }}
+                                </p>
+                                <div class="bg-blue-50 p-4 rounded-lg">
+                                    <h4 class="font-bold text-coptic-burgundy text-xs mb-1 uppercase">{{ t('didYouKnow') }}</h4>
+                                    <p class="text-xs text-gray-600">{{ t('didYouKnowText') }}</p>
+                                </div>
+                            </div>
+
+                            <!-- Comparison Widget -->
+                            <div class="bg-coptic-burgundy/5 p-6 rounded-xl border border-coptic-burgundy/10">
+                                <h3 class="font-bold text-coptic-burgundy mb-4 text-center">{{ t('comparisonTitle') }}</h3>
+                                <div class="space-y-3">
+                                    <div class="bg-white p-3 rounded-lg shadow-sm flex items-center gap-3 border-l-4 border-coptic-gold">
+                                        <i class="fas fa-book-bible text-coptic-burgundy text-lg"></i>
+                                        <div>
+                                            <h4 class="font-bold text-sm">{{ t('katamarsTitle') }}</h4>
+                                            <p class="text-xs text-gray-500">{{ t('katamarsDefinition') }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="bg-white p-3 rounded-lg shadow-sm flex items-center gap-3 opacity-70">
+                                        <i class="fas fa-scroll text-gray-500 text-lg"></i>
+                                        <div>
+                                            <h4 class="font-bold text-sm">{{ t('synaxariumTitle') }}</h4>
+                                            <p class="text-xs text-gray-500">{{ t('synaxariumDefinition') }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Meditation -->
+                            <div class="bg-gradient-to-br from-coptic-gold to-yellow-600 rounded-xl p-6 text-white text-center relative overflow-hidden shadow-lg">
+                                <div class="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/arabesque.png')]"></div>
+                                <i class="fas fa-praying-hands text-2xl mb-3 text-white/80 relative z-10"></i>
+                                <h3 class="font-bold mb-3 relative z-10 font-serif">{{ t('meditationTitle') }}</h3>
+                                <p class="text-sm italic leading-relaxed mb-2 relative z-10">
+                                    "{{ t('meditationText') }}"
+                                </p>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- ================= Footer ================= -->
+        <footer class="bg-coptic-burgundy text-white pt-16 pb-8 border-t-4 border-coptic-gold">
+            <div class="container mx-auto px-4">
+                <div class="text-center mb-8">
+                    <i class="fas fa-church text-3xl text-coptic-gold mb-3"></i>
+                    <h3 class="text-xl font-bold font-serif">{{ t('churchName') }}</h3>
+                </div>
+                <div class="border-t border-white/10 pt-8 text-center text-sm text-red-200">
+                    <p>&copy; {{ toLocalDigits('2025') }} {{ t('churchName') }}. {{ t('copyrights') }}</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Vue App Logic -->
+    <script>
+        const { createApp, ref, computed, watch, onMounted } = Vue;
+        const { createI18n, useI18n } = VueI18n;
+
+        // --- Translation Data ---
+        const messages = {
+            ar: {
+                // Global
+                churchName: "ام النور",
+                city: "إيطاليا",
+                home: "الرئيسية",
+                agpeya: "الأجبية",
+                euchologion: "الخولاجي",
+                katamars: "القطمارس",
+                synaxarium: "السنكسار",
+                more: "المزيد",
+                contactUs: "اتصل بنا",
+                copyrights: "جميع الحقوق محفوظة",
+
+                // Page Specific
+                katamarsTitle: "القطمارس القبطي",
+                katamarsDesc: "القطمارس هو كتاب القراءات اليومية من الكتاب المقدس، مرتب حسب فصول السنة القبطية ليعيش المؤمنون رحلة الخلاص.",
+                liturgicalSeasonExample: "الخماسين المقدسة",
+                
+                sectionMatins: "رفع بخور باكر",
+                sectionLiturgy: "القداس الإلهي",
+                
+                // Readings Types
+                psalm: "المزمور",
+                gospel: "الإنجيل",
+                pauline: "البولس",
+                catholic: "الكاثوليكون",
+                acts: "الإبركسيس",
+                readFullText: "اقرأ النص كاملًا",
+                
+                // Dummy Content
+                psalmText: "سبحوا الرب يا جميع الأمم، ولتباركه كافة الشعوب. لأن رحمته قد ثبتت علينا، وحق الرب يدوم إلى الأبد. هلليلويا.",
+                gospelText: "في البدء كان الكلمة، والكلمة كان عند الله، وكان الكلمة الله. هذا كان في البدء عند الله...",
+                paulineText: "بولس، عبد يسوع المسيح، المدعو رسولاً، المفرز لإنجيل الله...",
+                catholicText: "يعقوب، عبد الله والرب يسوع المسيح، يهدي السلام إلى الاثني عشر سبطاً...",
+                actsText: "ولما حضر يوم الخمسين كان الجميع معاً بنفس واحدة...",
+
+                // Info & Comparison
+                infoTitle: "معلومة طقسية",
+                infoText: "تم ترتيب قراءات القطمارس بعناية فائقة بواسطة آباء الكنيسة، بحيث تغطي أهم العقائد والأحداث في حياة السيد المسيح على مدار السنة.",
+                didYouKnow: "هل تعلم؟",
+                didYouKnowText: "كلمة قطمارس يونانية الأصل تعني (نصيب) أو (جزء)، إشارة إلى الأجزاء المختارة للقراءة.",
+                
+                comparisonTitle: "الفرق بين الكتب",
+                synaxariumTitle: "السنكسار",
+                synaxariumDefinition: "سير قديسين وتاريخ.",
+                katamarsTitle: "القطمارس",
+                katamarsDefinition: "قراءات كتابية يومية.",
+                
+                meditationTitle: "تأمل اليوم",
+                meditationText: "كلمة الله هي سراج لرجلي ونور لسبيلي. لنخخبئ كلامه في قلوبنا لكي لا نخطئ إليه.",
+            },
+            it: {
+                // Global
+                churchName: "Madre della Luce",
+                city: "Italia",
+                home: "Home",
+                agpeya: "Agpeya",
+                euchologion: "Eucologio",
+                katamars: "Katamars",
+                synaxarium: "Sinassario",
+                more: "Altro",
+                contactUs: "Contattaci",
+                copyrights: "Tutti i diritti riservati",
+
+                // Page Specific
+                katamarsTitle: "Katamars Copto",
+                katamarsDesc: "Il Katamars è il libro delle letture bibliche quotidiane, organizzato secondo l'anno copto.",
+                liturgicalSeasonExample: "La Santa Cinquantina",
+                
+                sectionMatins: "Mattutino (Lodi)",
+                sectionLiturgy: "Divina Liturgia",
+                
+                // Readings Types
+                psalm: "Salmo",
+                gospel: "Vangelo",
+                pauline: "Paoline",
+                catholic: "Cattoliche",
+                acts: "Atti degli Apostoli",
+                readFullText: "Leggi testo completo",
+                
+                // Dummy Content
+                psalmText: "Lodate il Signore, nazioni tutte! Popoli tutti, cantate la sua lode! Perché forte è il suo amore per noi...",
+                gospelText: "In principio era il Verbo, e il Verbo era presso Dio e il Verbo era Dio...",
+                paulineText: "Paolo, servo di Cristo Gesù, apostolo per vocazione, prescelto per annunciare il vangelo di Dio...",
+                catholicText: "Giacomo, servo di Dio e del Signore Gesù Cristo, alle dodici tribù che sono nella dispersione...",
+                actsText: "Mentre stava compiendosi il giorno della Pentecoste, si trovavano tutti insieme nello stesso luogo...",
+
+                // Info & Comparison
+                infoTitle: "Info Liturgica",
+                infoText: "Le letture del Katamars sono state organizzate dai Padri della Chiesa per coprire gli eventi della salvezza durante l'anno.",
+                didYouKnow: "Lo sapevi?",
+                didYouKnowText: "La parola Katamars è di origine greca e significa 'parte' o 'quota' di lettura.",
+                
+                comparisonTitle: "Confronto",
+                synaxariumTitle: "Sinassario",
+                synaxariumDefinition: "Vite dei santi e storia.",
+                katamarsTitle: "Katamars",
+                katamarsDefinition: "Letture bibliche quotidiane.",
+                
+                meditationTitle: "Meditazione di Oggi",
+                meditationText: "La tua parola è una lampada al mio piede e una luce sul mio sentiero.",
+            }
+        };
+
+        const i18n = createI18n({
+            locale: 'ar',
+            fallbackLocale: 'en',
+            messages,
+            legacy: false
+        });
+
+        const app = createApp({
+            setup() {
+                const { t, locale } = useI18n();
+                const mobileMenuOpen = ref(false);
+
+                // --- Helper Functions ---
+                const toLocalDigits = (str) => {
+                    if (!str) return '';
+                    if (locale.value !== 'ar') return str;
+                    return str.toString().replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
+                };
+
+                // --- Direction Logic ---
+                watch(locale, (newLang) => {
+                    document.documentElement.setAttribute('lang', newLang);
+                    document.documentElement.setAttribute('dir', newLang === 'ar' ? 'rtl' : 'ltr');
+                    if(newLang === 'ar') {
+                        document.body.classList.remove('font-it');
+                        document.body.classList.add('font-ar');
+                    } else {
+                        document.body.classList.remove('font-ar');
+                        document.body.classList.add('font-it');
+                    }
+                }, { immediate: true });
+
+                const toggleLang = () => { locale.value = locale.value === 'ar' ? 'it' : 'ar'; };
+
+                // --- Navigation Logic ---
+                const navItems = [
+                    { key: 'home', icon: 'fas fa-home', link: 'index.html' },
+                    { key: 'agpeya', icon: 'fas fa-clock', link: 'agpeya.html' },
+                    { key: 'euchologion', icon: 'fas fa-book-open', link: 'kholagy.html' },
+                    { key: 'katamars', icon: 'fas fa-book-bible', link: 'katamars.html' },
+                    { key: 'synaxarium', icon: 'fas fa-scroll', link: 'synaxarium.html' },
+                    { key: 'more', icon: 'fas fa-ellipsis-h', link: 'index.html' },
+                    { key: 'contactUs', icon: 'fas fa-envelope', link: 'contact.html' },
+                ];
+
+                const handleNavigation = (item) => {
+                    if (item.link && item.link !== '#') {
+                        window.location.href = item.link;
+                    }
+                };
+
+                // --- Data & Readings ---
+                const currentDate = computed(() => {
+                    const d = new Date();
+                    return d.toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : 'it-IT', { 
+                        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+                    });
+                });
+
+                const copticDate = computed(() => {
+                    return locale.value === 'ar' ? "٢٣ برمهات ١٧٤١ ش" : "23 Baramhat 1741 AM";
+                });
+
+                // Readings Data Structure
+                // Type: psalm, gospel, pauline, catholic, acts
+                const matinsReadings = ref([
+                    { type: 'psalm', titleKey: 'psalm', ref: '117:1-2', textKey: 'psalmText', icon: 'fas fa-music', isOpen: false },
+                    { type: 'gospel', titleKey: 'gospel', ref: 'Jn 1:1-5', textKey: 'gospelText', icon: 'fas fa-book-bible', isOpen: true }
+                ]);
+
+                const liturgyReadings = ref([
+                    { type: 'pauline', titleKey: 'pauline', ref: 'Rom 1:1-7', textKey: 'paulineText', icon: 'fas fa-envelope-open-text', isOpen: false },
+                    { type: 'catholic', titleKey: 'catholic', ref: 'James 1:1-5', textKey: 'catholicText', icon: 'fas fa-globe', isOpen: false },
+                    { type: 'acts', titleKey: 'acts', ref: 'Acts 2:1-4', textKey: 'actsText', icon: 'fas fa-history', isOpen: false },
+                    { type: 'psalm', titleKey: 'psalm', ref: '118:5-6', textKey: 'psalmText', icon: 'fas fa-music', isOpen: false },
+                    { type: 'gospel', titleKey: 'gospel', ref: 'Jn 1:6-12', textKey: 'gospelText', icon: 'fas fa-book-bible', isOpen: true }
+                ]);
+
+                // Styling Helper
+                const getReadingIconColor = (type) => {
+                    if (type === 'gospel') return 'bg-coptic-gospel';
+                    if (type === 'psalm') return 'bg-coptic-psalm';
+                    return 'bg-coptic-epistle';
+                };
+
+                return {
+                    t, locale, toggleLang,
+                    toLocalDigits,
+                    currentDate, copticDate,
+                    navItems, handleNavigation, mobileMenuOpen,
+                    matinsReadings, liturgyReadings, getReadingIconColor
+                };
+            }
+        });
+
+        app.use(i18n);
+        app.mount('#app');
+    </script>
+</body>
+</html>

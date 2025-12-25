@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>St. Mark Church - Contact Us</title>
+    
+    <!-- Vue 3 & Vue I18n -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/vue-i18n@9"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Config (Matches Main Site) -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        coptic: {
+                            burgundy: '#580a0a',
+                            gold: '#c5a059',
+                            beige: '#f9f7f2',
+                            text: '#2d3748',
+                            light: '#ffffff',
+                            whatsapp: '#25D366' /* WhatsApp Green */
+                        }
+                    },
+                    fontFamily: {
+                        ar: ['Cairo', 'sans-serif'],
+                        arSerif: ['Amiri', 'serif'],
+                        it: ['Lato', 'sans-serif'],
+                        itSerif: ['Playfair Display', 'serif'],
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Shared Styles */
+        body { background-color: #f9f7f2; color: #2d3748; transition: all 0.3s ease; }
+        
+        /* Language Typography */
+        :root[lang="ar"] body { font-family: 'Cairo', sans-serif; }
+        :root[lang="it"] body { font-family: 'Lato', sans-serif; }
+        :root[lang="ar"] h1, :root[lang="ar"] h2, :root[lang="ar"] h3 { font-family: 'Amiri', serif; }
+        :root[lang="it"] h1, :root[lang="it"] h2, :root[lang="it"] h3 { font-family: 'Playfair Display', serif; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #c5a059; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #580a0a; }
+
+        /* Pattern */
+        .bg-pattern {
+            background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 4v12M4 10h12' stroke='%23c5a059' stroke-width='1' opacity='0.15'/%3E%3C/svg%3E");
+        }
+        
+        /* Transitions */
+        .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+        .fade-enter-from, .fade-leave-to { opacity: 0; }
+        
+        .slide-up-enter-active { transition: all 0.5s ease-out; }
+        .slide-up-enter-from { opacity: 0; transform: translateY(20px); }
+        .slide-up-leave-to { opacity: 0; transform: translateY(-20px); }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+
+    <div id="app" class="flex flex-col min-h-screen">
+        
+        <!-- ================= Navbar (Unified) ================= -->
+        <nav class="bg-white shadow-md sticky top-0 z-50">
+            <div class="container mx-auto px-4">
+                <div class="flex justify-between items-center h-20">
+                    <!-- Logo / Brand -->
+                    <div class="flex items-center gap-3 cursor-pointer" @click="handleNavigation({ link: 'index.html' })">
+                        <div class="w-10 h-10 bg-coptic-burgundy text-white rounded-full flex items-center justify-center text-xl shadow-lg border-2 border-coptic-gold">
+                            <i class="fas fa-church"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-coptic-burgundy font-bold text-lg leading-tight">{{ t('churchName') }}</span>
+                            <span class="text-xs text-gray-500">{{ t('city') }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Desktop Menu -->
+                    <div class="hidden md:flex items-center gap-1 lg:gap-4">
+                        <button v-for="item in navItems" :key="item.key" 
+                           @click="handleNavigation(item)"
+                           :class="(item.key === 'contactUs') ? 'bg-coptic-burgundy/5 text-coptic-burgundy font-bold' : 'text-coptic-text hover:text-coptic-burgundy hover:bg-gray-50'"
+                           class="px-3 py-2 rounded-md transition font-medium flex items-center gap-2">
+                            <i :class="item.icon" class="text-coptic-gold text-sm"></i>
+                            {{ t(item.key) }}
+                        </button>
+                    </div>
+
+                    <!-- Right Side: Lang Switcher & Mobile Toggle -->
+                    <div class="flex items-center gap-3">
+                        <button @click="toggleLang" class="flex items-center gap-2 px-4 py-1.5 border border-coptic-burgundy/20 rounded-full hover:bg-coptic-burgundy hover:text-white transition text-sm font-bold text-coptic-burgundy">
+                            <i class="fas fa-globe"></i>
+                            <span>{{ locale === 'ar' ? 'Italiano' : 'العربية' }}</span>
+                        </button>
+
+                        <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden text-coptic-burgundy text-2xl p-2">
+                            <i :class="mobileMenuOpen ? 'fas fa-times' : 'fas fa-bars'"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile Menu -->
+            <transition name="fade">
+                <div v-if="mobileMenuOpen" class="md:hidden bg-white border-t border-gray-100 absolute w-full shadow-lg z-50">
+                    <div class="flex flex-col p-4 gap-2">
+                        <button v-for="item in navItems" :key="item.key" 
+                           @click="handleNavigation(item); mobileMenuOpen = false"
+                           class="p-3 hover:bg-gray-50 rounded-lg flex items-center gap-3 text-coptic-burgundy w-full text-start">
+                            <div class="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center">
+                                <i :class="item.icon"></i>
+                            </div>
+                            {{ t(item.key) }}
+                        </button>
+                    </div>
+                </div>
+            </transition>
+        </nav>
+
+        <!-- ================= Main Content ================= -->
+        <main class="flex-grow">
+            
+            <!-- 1. Hero Section -->
+            <section class="bg-coptic-burgundy text-white pt-16 pb-20 relative overflow-hidden">
+                <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/arabesque.png')]"></div>
+                <!-- Decorative Icon -->
+                <i class="fas fa-envelope-open-text absolute -bottom-10 -left-10 text-9xl text-white opacity-5 rotate-12"></i>
+                
+                <div class="container mx-auto px-4 text-center relative z-10">
+                    <h1 class="text-4xl md:text-5xl font-bold font-serif mb-4">{{ t('contactTitle') }}</h1>
+                    <p class="text-lg text-blue-100 max-w-2xl mx-auto font-light leading-relaxed">
+                        {{ t('contactDesc') }}
+                    </p>
+                </div>
+            </section>
+
+            <!-- 2. Contact Cards Section -->
+            <section class="py-16 bg-coptic-beige bg-pattern -mt-10">
+                <div class="container mx-auto px-4 relative z-20">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+                        
+                        <!-- Email Card -->
+                        <div class="bg-white rounded-xl shadow-lg p-8 text-center border-t-4 border-coptic-gold transform transition hover:-translate-y-2 hover:shadow-2xl group">
+                            <div class="w-16 h-16 bg-blue-50 text-coptic-burgundy rounded-full flex items-center justify-center text-2xl mx-auto mb-4 group-hover:bg-coptic-burgundy group-hover:text-white transition-colors duration-300">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800 mb-2">{{ t('emailTitle') }}</h3>
+                            <p class="text-sm text-gray-500 mb-4">{{ t('emailSubtitle') }}</p>
+                            <a href="mailto:ramyeid2311@gmail.com" class="text-coptic-gold font-bold hover:underline break-all dir-ltr block">
+                                ramyeid2311@gmail.com
+                            </a>
+                        </div>
+
+                        <!-- Phone Card -->
+                        <div class="bg-white rounded-xl shadow-lg p-8 text-center border-t-4 border-coptic-gold transform transition hover:-translate-y-2 hover:shadow-2xl group">
+                            <div class="w-16 h-16 bg-blue-50 text-coptic-burgundy rounded-full flex items-center justify-center text-2xl mx-auto mb-4 group-hover:bg-coptic-burgundy group-hover:text-white transition-colors duration-300">
+                                <i class="fas fa-phone"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800 mb-2">{{ t('phoneTitle') }}</h3>
+                            <p class="text-sm text-gray-500 mb-4">{{ t('phoneSubtitle') }}</p>
+                            <a href="tel:+393447044605" class="text-coptic-gold font-bold text-lg hover:underline dir-ltr block">
+                                {{ toLocalDigits('+39 344 704 4605') }}
+                            </a>
+                        </div>
+
+                        <!-- WhatsApp Card -->
+                        <div class="bg-white rounded-xl shadow-lg p-8 text-center border-t-4 border-coptic-gold transform transition hover:-translate-y-2 hover:shadow-2xl group">
+                            <div class="w-16 h-16 bg-green-50 text-coptic-whatsapp rounded-full flex items-center justify-center text-3xl mx-auto mb-4 group-hover:bg-coptic-whatsapp group-hover:text-white transition-colors duration-300">
+                                <i class="fab fa-whatsapp"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800 mb-2">{{ t('whatsappTitle') }}</h3>
+                            <p class="text-sm text-gray-500 mb-4">{{ t('whatsappSubtitle') }}</p>
+                            
+                            <div class="flex flex-col gap-2 items-center">
+                                <a href="https://wa.me/393447044605" target="_blank" class="flex items-center gap-2 text-coptic-whatsapp font-bold hover:bg-green-50 px-3 py-1 rounded-full transition dir-ltr">
+                                    <i class="fab fa-whatsapp"></i> {{ toLocalDigits('+39 344 704 4605') }}
+                                </a>
+                                <a href="https://wa.me/201207860858" target="_blank" class="flex items-center gap-2 text-coptic-whatsapp font-bold hover:bg-green-50 px-3 py-1 rounded-full transition dir-ltr">
+                                    <i class="fab fa-whatsapp"></i> {{ toLocalDigits('+20 120 786 0858') }}
+                                </a>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. Form Section -->
+            <section class="py-16 bg-white">
+                <div class="container mx-auto px-4 max-w-3xl">
+                    <div class="bg-white border border-gray-100 shadow-sm rounded-2xl p-8 md:p-10">
+                        <!-- Contact Form -->
+                        <div class="text-center mb-8">
+                            <div class="w-12 h-12 rounded-full bg-coptic-burgundy/10 flex items-center justify-center text-coptic-burgundy mx-auto mb-4">
+                                <i class="fas fa-paper-plane text-xl"></i>
+                            </div>
+                            <h2 class="text-2xl font-bold text-coptic-burgundy mb-2">{{ t('formTitle') }}</h2>
+                            <p class="text-gray-600">{{ t('formDesc') }}</p>
+                        </div>
+
+                        <form @submit.prevent="submitForm" class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2">{{ t('labelName') }}</label>
+                                <input type="text" v-model="form.name" required class="w-full bg-gray-50 border border-gray-200 rounded-lg py-3 px-4 focus:outline-none focus:border-coptic-gold focus:ring-1 focus:ring-coptic-gold transition">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2">{{ t('labelEmail') }}</label>
+                                <input type="email" v-model="form.email" required class="w-full bg-gray-50 border border-gray-200 rounded-lg py-3 px-4 focus:outline-none focus:border-coptic-gold focus:ring-1 focus:ring-coptic-gold transition">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-bold text-gray-700 mb-2">{{ t('labelMessage') }}</label>
+                                <textarea rows="4" v-model="form.message" required class="w-full bg-gray-50 border border-gray-200 rounded-lg py-3 px-4 focus:outline-none focus:border-coptic-gold focus:ring-1 focus:ring-coptic-gold transition"></textarea>
+                            </div>
+                            
+                            <button type="submit" :disabled="isSubmitting" class="w-full bg-coptic-burgundy text-white font-bold py-3 rounded-lg hover:bg-red-900 transition flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed">
+                                <i v-if="!isSubmitting" class="fas fa-paper-plane"></i>
+                                <i v-else class="fas fa-spinner fa-spin"></i>
+                                {{ isSubmitting ? t('sending') : t('sendBtn') }}
+                            </button>
+
+                            <!-- Success Message -->
+                            <transition name="slide-up">
+                                <div v-if="showSuccess" class="bg-green-50 text-green-800 p-4 rounded-lg flex items-center gap-3 border border-green-200 mt-4 justify-center">
+                                    <i class="fas fa-check-circle text-xl"></i>
+                                    <span>{{ t('successMessage') }}</span>
+                                </div>
+                            </transition>
+                        </form>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- 4. Spiritual Message -->
+            <section class="bg-coptic-burgundy text-white py-12 text-center relative overflow-hidden">
+                <div class="absolute inset-0 opacity-10 bg-pattern"></div>
+                <div class="container mx-auto px-4 relative z-10">
+                    <i class="fas fa-praying-hands text-3xl text-coptic-gold mb-4"></i>
+                    <h3 class="text-xl md:text-2xl font-serif italic">"{{ t('spiritualMessage') }}"</h3>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- ================= Footer ================= -->
+        <footer class="bg-coptic-burgundy text-white pt-16 pb-8 border-t-4 border-coptic-gold">
+            <div class="container mx-auto px-4">
+                <div class="text-center mb-8">
+                    <i class="fas fa-church text-3xl text-coptic-gold mb-3"></i>
+                    <h3 class="text-xl font-bold font-serif">{{ t('churchName') }}</h3>
+                </div>
+                <div class="border-t border-white/10 pt-8 text-center text-sm text-red-200">
+                    <p>&copy; {{ toLocalDigits('2025') }} {{ t('churchName') }}. {{ t('copyrights') }}</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Vue App Logic -->
+    <script>
+        const { createApp, ref, computed, watch } = Vue;
+        const { createI18n, useI18n } = VueI18n;
+
+        // --- Translation Data ---
+        const messages = {
+            ar: {
+                // Shared
+                churchName: "ام النور",
+                city: "إيطاليا",
+                home: "الرئيسية",
+                agpeya: "الأجبية",
+                euchologion: "الخولاجي",
+                katamars: "القطمارس",
+                synaxarium: "السنكسار",
+                more: "المزيد",
+                contactUs: "اتصل بنا",
+                copyrights: "جميع الحقوق محفوظة",
+
+                // Page Specific
+                contactTitle: "تواصل معنا",
+                contactDesc: "نحن هنا لخدمتكم. يسعدنا استقبال استفساراتكم، طلبات الصلاة، أو أي مقترحات لتطوير الخدمة.",
+                
+                emailTitle: "البريد الإلكتروني",
+                emailSubtitle: "للاستفسارات العامة والمراسلات الرسمية",
+                
+                phoneTitle: "الهاتف",
+                phoneSubtitle: "متاح طوال أيام الأسبوع",
+                
+                whatsappTitle: "واتساب",
+                whatsappSubtitle: "للتواصل السريع والرسائل النصية",
+                
+                formTitle: "أرسل لنا رسالة",
+                formDesc: "يمكنك ملء النموذج أدناه وسيتم الرد عليكم في أقرب وقت ممكن.",
+                labelName: "الاسم بالكامل",
+                labelEmail: "البريد الإلكتروني",
+                labelMessage: "نص الرسالة",
+                sendBtn: "إرسال الرسالة",
+                sending: "جاري الإرسال...",
+                successMessage: "تم إرسال رسالتكم بنجاح! شكراً لتواصلكم معنا.",
+                
+                spiritualMessage: "نحن هنا لخدمتكم بالصلاة والمحبة، لأن المحبة لا تسقط أبداً.",
+            },
+            it: {
+                // Shared
+                churchName: "Madre della Luce",
+                city: "Italia",
+                home: "Home",
+                agpeya: "Agpeya",
+                euchologion: "Eucologio",
+                katamars: "Katamars",
+                synaxarium: "Sinassario",
+                more: "Altro",
+                contactUs: "Contattaci",
+                copyrights: "Tutti i diritti riservati",
+
+                // Page Specific
+                contactTitle: "Contattaci",
+                contactDesc: "Siamo qui per servirti. Siamo lieti di ricevere le tue richieste, preghiere o suggerimenti.",
+                
+                emailTitle: "Email",
+                emailSubtitle: "Per informazioni generali",
+                
+                phoneTitle: "Telefono",
+                phoneSubtitle: "Disponibile tutta la settimana",
+                
+                whatsappTitle: "WhatsApp",
+                whatsappSubtitle: "Per messaggi veloci",
+                
+                formTitle: "Inviaci un messaggio",
+                formDesc: "Compila il modulo sottostante e ti risponderemo il prima possibile.",
+                labelName: "Nome Completo",
+                labelEmail: "Email",
+                labelMessage: "Messaggio",
+                sendBtn: "Invia Messaggio",
+                sending: "Invio in corso...",
+                successMessage: "Il tuo messaggio è stato inviato con successo! Grazie.",
+                
+                spiritualMessage: "Siamo qui per servirvi con preghiera e amore, perché l'amore non avrà mai fine.",
+            }
+        };
+
+        const i18n = createI18n({
+            locale: 'ar',
+            fallbackLocale: 'en',
+            messages,
+            legacy: false
+        });
+
+        const app = createApp({
+            setup() {
+                const { t, locale } = useI18n();
+                const mobileMenuOpen = ref(false);
+                const isSubmitting = ref(false);
+                const showSuccess = ref(false);
+                const form = ref({
+                    name: '',
+                    email: '',
+                    message: ''
+                });
+
+                // --- Helper Functions ---
+                const toLocalDigits = (str) => {
+                    if (!str) return '';
+                    if (locale.value !== 'ar') return str;
+                    return str.toString().replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
+                };
+
+                // --- Direction Logic ---
+                watch(locale, (newLang) => {
+                    document.documentElement.setAttribute('lang', newLang);
+                    document.documentElement.setAttribute('dir', newLang === 'ar' ? 'rtl' : 'ltr');
+                    if(newLang === 'ar') {
+                        document.body.classList.remove('font-it');
+                        document.body.classList.add('font-ar');
+                    } else {
+                        document.body.classList.remove('font-ar');
+                        document.body.classList.add('font-it');
+                    }
+                }, { immediate: true });
+
+                const toggleLang = () => { locale.value = locale.value === 'ar' ? 'it' : 'ar'; };
+
+                // --- Navigation Logic ---
+                const navItems = [
+                    { key: 'home', icon: 'fas fa-home', link: 'index.html' },
+                    { key: 'agpeya', icon: 'fas fa-clock', link: 'agpeya.html' },
+                    { key: 'euchologion', icon: 'fas fa-book-open', link: 'kholagy.html' },
+                    { key: 'katamars', icon: 'fas fa-book-bible', link: 'katamars.html' },
+                    { key: 'synaxarium', icon: 'fas fa-scroll', link: 'synaxarium.html' },
+                    { key: 'more', icon: 'fas fa-ellipsis-h', link: 'index.html' },
+                    { key: 'contactUs', icon: 'fas fa-envelope', link: 'contact.html' },
+                ];
+
+                const handleNavigation = (item) => {
+                    if (item.link && item.link !== '#') {
+                        window.location.href = item.link;
+                    }
+                };
+
+                // --- Form Logic ---
+                const submitForm = () => {
+                    isSubmitting.value = true;
+                    showSuccess.value = false;
+                    
+                    // Simulate API Call
+                    setTimeout(() => {
+                        isSubmitting.value = false;
+                        showSuccess.value = true;
+                        form.value = { name: '', email: '', message: '' };
+                        
+                        // Hide success message after 5 seconds
+                        setTimeout(() => showSuccess.value = false, 5000);
+                    }, 1500);
+                };
+
+                return {
+                    t, locale, toggleLang,
+                    toLocalDigits,
+                    navItems, handleNavigation, mobileMenuOpen,
+                    form, isSubmitting, showSuccess, submitForm
+                };
+            }
+        });
+
+        app.use(i18n);
+        app.mount('#app');
+    </script>
+</body>
+</html>

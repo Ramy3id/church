@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>St. Mark Church - Synaxarium</title>
+    
+    <!-- Vue 3 & Vue I18n -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/vue-i18n@9"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Config (Matches Main Site) -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        coptic: {
+                            burgundy: '#580a0a',
+                            gold: '#c5a059',
+                            beige: '#f9f7f2',
+                            text: '#2d3748',
+                            light: '#ffffff',
+                            martyr: '#e53e3e', /* Red for Martyrs */
+                            saint: '#3182ce',  /* Blue for Departures */
+                            feast: '#d69e2e'   /* Gold for Feasts */
+                        }
+                    },
+                    fontFamily: {
+                        ar: ['Cairo', 'sans-serif'],
+                        arSerif: ['Amiri', 'serif'],
+                        it: ['Lato', 'sans-serif'],
+                        itSerif: ['Playfair Display', 'serif'],
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Shared Styles */
+        body { background-color: #f9f7f2; color: #2d3748; transition: all 0.3s ease; }
+        
+        /* Language Typography */
+        :root[lang="ar"] body { font-family: 'Cairo', sans-serif; }
+        :root[lang="it"] body { font-family: 'Lato', sans-serif; }
+        :root[lang="ar"] h1, :root[lang="ar"] h2, :root[lang="ar"] h3 { font-family: 'Amiri', serif; }
+        :root[lang="it"] h1, :root[lang="it"] h2, :root[lang="it"] h3 { font-family: 'Playfair Display', serif; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #c5a059; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #580a0a; }
+
+        /* Pattern */
+        .bg-pattern {
+            background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 4v12M4 10h12' stroke='%23c5a059' stroke-width='1' opacity='0.15'/%3E%3C/svg%3E");
+        }
+        
+        /* Expand Animation */
+        .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+        .fade-enter-from, .fade-leave-to { opacity: 0; }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+
+    <div id="app" class="flex flex-col min-h-screen">
+        
+        <!-- ================= Navbar (Unified) ================= -->
+        <nav class="bg-white shadow-md sticky top-0 z-50">
+            <div class="container mx-auto px-4">
+                <div class="flex justify-between items-center h-20">
+                    <!-- Logo / Brand -->
+                    <div class="flex items-center gap-3 cursor-pointer" @click="handleNavigation({ link: 'index.html' })">
+                        <div class="w-10 h-10 bg-coptic-burgundy text-white rounded-full flex items-center justify-center text-xl shadow-lg border-2 border-coptic-gold">
+                            <i class="fas fa-church"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-coptic-burgundy font-bold text-lg leading-tight">{{ t('churchName') }}</span>
+                            <span class="text-xs text-gray-500">{{ t('city') }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Desktop Menu -->
+                    <div class="hidden md:flex items-center gap-1 lg:gap-4">
+                        <button v-for="item in navItems" :key="item.key" 
+                           @click="handleNavigation(item)"
+                           :class="(item.key === 'synaxarium') ? 'bg-coptic-burgundy/5 text-coptic-burgundy font-bold' : 'text-coptic-text hover:text-coptic-burgundy hover:bg-gray-50'"
+                           class="px-3 py-2 rounded-md transition font-medium flex items-center gap-2">
+                            <i :class="item.icon" class="text-coptic-gold text-sm"></i>
+                            {{ t(item.key) }}
+                        </button>
+                    </div>
+
+                    <!-- Right Side: Lang Switcher & Mobile Toggle -->
+                    <div class="flex items-center gap-3">
+                        <button @click="toggleLang" class="flex items-center gap-2 px-4 py-1.5 border border-coptic-burgundy/20 rounded-full hover:bg-coptic-burgundy hover:text-white transition text-sm font-bold text-coptic-burgundy">
+                            <i class="fas fa-globe"></i>
+                            <span>{{ locale === 'ar' ? 'Italiano' : 'العربية' }}</span>
+                        </button>
+
+                        <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden text-coptic-burgundy text-2xl p-2">
+                            <i :class="mobileMenuOpen ? 'fas fa-times' : 'fas fa-bars'"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile Menu -->
+            <transition name="fade">
+                <div v-if="mobileMenuOpen" class="md:hidden bg-white border-t border-gray-100 absolute w-full shadow-lg z-50">
+                    <div class="flex flex-col p-4 gap-2">
+                        <button v-for="item in navItems" :key="item.key" 
+                           @click="handleNavigation(item); mobileMenuOpen = false"
+                           class="p-3 hover:bg-gray-50 rounded-lg flex items-center gap-3 text-coptic-burgundy w-full text-start">
+                            <div class="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center">
+                                <i :class="item.icon"></i>
+                            </div>
+                            {{ t(item.key) }}
+                        </button>
+                    </div>
+                </div>
+            </transition>
+        </nav>
+
+        <!-- ================= Main Content ================= -->
+        <main class="flex-grow">
+            
+            <!-- 1. Hero & Date Section -->
+            <section class="bg-coptic-burgundy text-white pt-16 pb-24 relative overflow-hidden">
+                <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/arabesque.png')]"></div>
+                
+                <div class="container mx-auto px-4 text-center relative z-10">
+                    <h1 class="text-4xl md:text-5xl font-bold font-serif mb-4">{{ t('synaxariumTitle') }}</h1>
+                    <p class="text-lg text-blue-100 max-w-2xl mx-auto font-light leading-relaxed">
+                        {{ t('synaxariumDesc') }}
+                    </p>
+                </div>
+            </section>
+
+            <!-- 2. Date Banner (Floating Card) -->
+            <div class="container mx-auto px-4 relative z-20 -mt-16 mb-12">
+                <div class="bg-white rounded-2xl shadow-xl p-6 border-t-4 border-coptic-gold flex flex-col md:flex-row justify-between items-center gap-6">
+                    
+                    <!-- Date Controls -->
+                    <div class="flex items-center gap-4 order-2 md:order-1">
+                        <button class="w-10 h-10 rounded-full border border-gray-200 hover:bg-coptic-burgundy hover:text-white transition flex items-center justify-center">
+                            <i :class="locale==='ar' ? 'fas fa-chevron-right' : 'fas fa-chevron-left'"></i>
+                        </button>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-coptic-burgundy font-serif">{{ copticDate }}</div>
+                            <div class="text-sm text-gray-500 font-bold">{{ toLocalDigits(currentDate) }}</div>
+                        </div>
+                        <button class="w-10 h-10 rounded-full border border-gray-200 hover:bg-coptic-burgundy hover:text-white transition flex items-center justify-center">
+                            <i :class="locale==='ar' ? 'fas fa-chevron-left' : 'fas fa-chevron-right'"></i>
+                        </button>
+                    </div>
+
+                    <!-- Liturgical Status -->
+                    <div class="order-1 md:order-2 bg-amber-50 px-6 py-2 rounded-full border border-amber-100 flex items-center gap-3">
+                        <i class="fas fa-cross text-coptic-gold"></i>
+                        <span class="font-bold text-amber-800 text-sm">{{ t('liturgicalStatusExample') }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Main Content Grid -->
+            <section class="pb-16 bg-coptic-beige bg-pattern">
+                <div class="container mx-auto px-4">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        
+                        <!-- Left Column: Synaxarium Events (Main) -->
+                        <div class="lg:col-span-2 space-y-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h2 class="text-2xl font-bold text-coptic-burgundy flex items-center gap-2">
+                                    <i class="fas fa-book-reader text-coptic-gold"></i>
+                                    {{ t('todayReadings') }}
+                                </h2>
+                            </div>
+
+                            <!-- Event Cards -->
+                            <div v-for="(event, index) in events" :key="index" 
+                                 class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group">
+                                <div class="flex flex-col md:flex-row">
+                                    <!-- Color Strip & Icon -->
+                                    <div :class="getTypeColorClass(event.type)" class="w-full md:w-24 flex items-center justify-center p-4 text-white text-2xl">
+                                        <i :class="event.icon"></i>
+                                    </div>
+                                    
+                                    <!-- Content -->
+                                    <div class="p-6 flex-grow">
+                                        <div class="flex items-start justify-between mb-2">
+                                            <div>
+                                                <span class="text-xs font-bold uppercase tracking-wider mb-1 block" :class="getTypeTextClass(event.type)">
+                                                    {{ t(event.typeKey) }}
+                                                </span>
+                                                <h3 class="text-xl font-bold text-gray-800 mb-2 font-serif">{{ t(event.titleKey) }}</h3>
+                                            </div>
+                                        </div>
+                                        <p class="text-gray-600 leading-relaxed text-sm mb-4 line-clamp-3">
+                                            {{ t(event.summaryKey) }}
+                                        </p>
+                                        <button class="text-coptic-gold text-sm font-bold flex items-center gap-2 hover:underline">
+                                            {{ t('readMore') }}
+                                            <i class="fas fa-arrow-down text-xs"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Comparison Section (Within Content flow) -->
+                            <div class="mt-12 bg-white rounded-xl p-8 border border-gray-200 shadow-sm">
+                                <h3 class="text-xl font-bold text-coptic-burgundy mb-6 text-center">{{ t('comparisonTitle') }}</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div class="bg-red-50 p-6 rounded-lg text-center border border-red-100">
+                                        <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-coptic-burgundy shadow-sm mx-auto mb-3">
+                                            <i class="fas fa-scroll"></i>
+                                        </div>
+                                        <h4 class="font-bold text-lg mb-2 text-coptic-burgundy">{{ t('synaxariumTitle') }}</h4>
+                                        <p class="text-sm text-gray-600">{{ t('synaxariumDefinition') }}</p>
+                                    </div>
+                                    <div class="bg-blue-50 p-6 rounded-lg text-center border border-blue-100">
+                                        <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-blue-800 shadow-sm mx-auto mb-3">
+                                            <i class="fas fa-book-bible"></i>
+                                        </div>
+                                        <h4 class="font-bold text-lg mb-2 text-blue-800">{{ t('katamarsTitle') }}</h4>
+                                        <p class="text-sm text-gray-600">{{ t('katamarsDefinition') }}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Right Column: Sidebar (Filter & Info) -->
+                        <div class="lg:col-span-1 space-y-6">
+                            
+                            <!-- Search & Filter Widget -->
+                            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 sticky top-24">
+                                <h3 class="font-bold text-gray-800 mb-4">{{ t('filterTitle') }}</h3>
+                                
+                                <div class="space-y-4">
+                                    <!-- Search -->
+                                    <div class="relative">
+                                        <i class="fas fa-search absolute top-3 start-3 text-gray-400 text-sm"></i>
+                                        <input type="text" :placeholder="t('searchPlaceholder')" 
+                                               class="w-full bg-gray-50 border border-gray-200 rounded-lg py-2 px-10 text-sm focus:outline-none focus:border-coptic-gold transition">
+                                    </div>
+
+                                    <!-- Filter Dropdown -->
+                                    <div class="relative">
+                                        <select class="w-full bg-gray-50 border border-gray-200 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-coptic-gold appearance-none cursor-pointer">
+                                            <option>{{ t('filterAll') }}</option>
+                                            <option>{{ t('typeMartyrdom') }}</option>
+                                            <option>{{ t('typeDeparture') }}</option>
+                                            <option>{{ t('typeFeast') }}</option>
+                                        </select>
+                                        <i class="fas fa-chevron-down absolute top-3 end-3 text-gray-400 text-xs pointer-events-none"></i>
+                                    </div>
+                                </div>
+                                
+                                <hr class="my-6 border-gray-100">
+
+                                <!-- Liturgical Info (Mini) -->
+                                <div class="flex gap-3">
+                                    <i class="fas fa-info-circle text-coptic-gold mt-1"></i>
+                                    <div>
+                                        <h4 class="font-bold text-sm text-coptic-burgundy mb-1">{{ t('whyReadDaily') }}</h4>
+                                        <p class="text-xs text-gray-500 leading-relaxed">{{ t('whyReadDailyText') }}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Spiritual Message -->
+                            <div class="bg-coptic-burgundy rounded-xl p-6 text-white text-center relative overflow-hidden">
+                                <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/arabesque.png')]"></div>
+                                <i class="fas fa-dove text-2xl mb-3 text-coptic-gold relative z-10"></i>
+                                <h3 class="font-bold mb-3 relative z-10 font-serif">{{ t('messageOfTheDay') }}</h3>
+                                <p class="text-sm italic opacity-90 leading-relaxed mb-4 relative z-10">
+                                    "{{ t('messageText') }}"
+                                </p>
+                                <p class="text-xs text-coptic-gold font-bold relative z-10">- {{ t('messageAuthor') }}</p>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- ================= Footer (Shared) ================= -->
+        <footer class="bg-coptic-burgundy text-white pt-16 pb-8 border-t-4 border-coptic-gold">
+            <div class="container mx-auto px-4">
+                <div class="text-center mb-8">
+                    <i class="fas fa-church text-3xl text-coptic-gold mb-3"></i>
+                    <h3 class="text-xl font-bold font-serif">{{ t('churchName') }}</h3>
+                </div>
+                <div class="border-t border-white/10 pt-8 text-center text-sm text-red-200">
+                    <p>&copy; {{ toLocalDigits('2025') }} {{ t('churchName') }}. {{ t('copyrights') }}</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Vue App Logic -->
+    <script>
+        const { createApp, ref, computed, watch, onMounted } = Vue;
+        const { createI18n, useI18n } = VueI18n;
+
+        // --- Translation Data ---
+        const messages = {
+            ar: {
+                // Shared
+                churchName: "ام النور",
+                city: "إيطاليا",
+                home: "الرئيسية",
+                agpeya: "الأجبية",
+                euchologion: "الخولاجي",
+                katamars: "القطمارس",
+                synaxarium: "السنكسار",
+                more: "المزيد",
+                contactUs: "اتصل بنا",
+                copyrights: "جميع الحقوق محفوظة",
+
+                // Page Specific
+                synaxariumTitle: "السنكسار القبطي",
+                synaxariumDesc: "السنكسار هو كتاب يضم سير القديسين والشهداء وأحداث الكنيسة عبر أيام السنة القبطية، يُقرأ يومياً لنتعلم من إيمان الآباء.",
+                todayReadings: "سنكسار اليوم",
+                readMore: "اقرأ السيرة كاملة",
+                liturgicalStatusExample: "صوم الرسل - يوم ٥",
+                
+                // Events Data Keys
+                typeMartyrdom: "استشهاد",
+                typeDeparture: "نياحة",
+                typeFeast: "عيد",
+                typeConsecration: "تكريس",
+                
+                event1Title: "استشهاد القديس مارجرجس الروماني",
+                event1Summary: "في هذا اليوم استشهد القديس العظيم مارجرجس أمير الشهداء، بعد عذابات كثيرة احتملها من أجل اسم المسيح، وصنع عجائب ومعجزات أذهلت المضطهدين.",
+                
+                event2Title: "نياحة البابا كيرلس السادس",
+                event2Summary: "تذكار نياحة القديس البابا كيرلس السادس، رجل الصلاة والمذبح، الذي قاد الكنيسة في فترة حالكة ورفع شأنها بصلواته.",
+                
+                event3Title: "تذكار الملاك ميخائيل",
+                event3Summary: "تحتفل الكنيسة في الثاني عشر من كل شهر قبطي بتذكار رئيس الملائكة الجليل ميخائيل، الشفيع في جنس البشر.",
+
+                // Comparison & Sidebar
+                comparisonTitle: "ما الفرق بين السنكسار والقطمارس؟",
+                katamarsTitle: "القطمارس",
+                synaxariumDefinition: "كتاب التاريخ الكنسي: يحوي سير القديسين مرتبة حسب الأيام.",
+                katamarsDefinition: "كتاب القراءات: يحوي فصول الكتاب المقدس (أناجيل، رسائل) الخاصة باليوم.",
+                
+                filterTitle: "بحث وتصفية",
+                searchPlaceholder: "ابحث عن قديس...",
+                filterAll: "كل الأحداث",
+                
+                whyReadDaily: "لماذا يُقرأ يومياً؟",
+                whyReadDailyText: "ليتذكر المؤمنون سيرة القديسين ويتمثلوا بإيمانهم، وتظل الكنيسة مرتبطة بتاريخها الحي.",
+                
+                messageOfTheDay: "رسالة اليوم",
+                messageText: "إن كنت تريد أن تكون كاملاً، فاذهب وبع أملاكك وأعط الفقراء، فيكون لك كنز في السماء، وتعال اتبعني.",
+                messageAuthor: "السيد المسيح",
+            },
+            it: {
+                // Shared
+                churchName: "Madre della Luce",
+                city: "Italia",
+                home: "Home",
+                agpeya: "Agpeya",
+                euchologion: "Eucologio",
+                katamars: "Katamars",
+                synaxarium: "Sinassario",
+                more: "Altro",
+                contactUs: "Contattaci",
+                copyrights: "Tutti i diritti riservati",
+
+                // Page Specific
+                synaxariumTitle: "Sinassario Copto",
+                synaxariumDesc: "Il Sinassario è il libro che contiene le vite dei santi, dei martiri e gli eventi della chiesa durante l'anno copto.",
+                todayReadings: "Sinassario di Oggi",
+                readMore: "Leggi Tutto",
+                liturgicalStatusExample: "Digiuno degli Apostoli - Giorno 5",
+                
+                // Events Data Keys
+                typeMartyrdom: "Martirio",
+                typeDeparture: "Partenza",
+                typeFeast: "Festa",
+                typeConsecration: "Consacrazione",
+                
+                event1Title: "Martirio di San Giorgio",
+                event1Summary: "In questo giorno fu martirizzato il grande San Giorgio, principe dei martiri, dopo aver sopportato molte torture per il nome di Cristo.",
+                
+                event2Title: "Partenza di Papa Cirillo VI",
+                event2Summary: "Commemorazione della partenza di San Papa Cirillo VI, uomo di preghiera, che guidò la chiesa con santità.",
+                
+                event3Title: "Arcangelo Michele",
+                event3Summary: "La Chiesa celebra il dodicesimo giorno di ogni mese copto la commemorazione dell'Arcangelo Michele.",
+
+                // Comparison & Sidebar
+                comparisonTitle: "Differenza tra Sinassario e Katamars",
+                katamarsTitle: "Katamars",
+                synaxariumDefinition: "Storia Ecclesiastica: Contiene le vite dei santi ordinate per giorno.",
+                katamarsDefinition: "Letture Bibliche: Contiene le letture (Vangeli, Epistole) per la liturgia.",
+                
+                filterTitle: "Cerca e Filtra",
+                searchPlaceholder: "Cerca un santo...",
+                filterAll: "Tutti gli eventi",
+                
+                whyReadDaily: "Perché si legge ogni giorno?",
+                whyReadDailyText: "Affinché i fedeli ricordino la vita dei santi e imitino la loro fede.",
+                
+                messageOfTheDay: "Messaggio del Giorno",
+                messageText: "Se vuoi essere perfetto, va', vendi quello che possiedi, dallo ai poveri e avrai un tesoro nel cielo; poi vieni e seguimi.",
+                messageAuthor: "Gesù Cristo",
+            }
+        };
+
+        const i18n = createI18n({
+            locale: 'ar',
+            fallbackLocale: 'en',
+            messages,
+            legacy: false
+        });
+
+        const app = createApp({
+            setup() {
+                const { t, locale } = useI18n();
+                const mobileMenuOpen = ref(false);
+
+                // --- Helper Functions ---
+                const toLocalDigits = (str) => {
+                    if (!str) return '';
+                    if (locale.value !== 'ar') return str;
+                    return str.toString().replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
+                };
+
+                // --- Direction Logic ---
+                watch(locale, (newLang) => {
+                    document.documentElement.setAttribute('lang', newLang);
+                    document.documentElement.setAttribute('dir', newLang === 'ar' ? 'rtl' : 'ltr');
+                    if(newLang === 'ar') {
+                        document.body.classList.remove('font-it');
+                        document.body.classList.add('font-ar');
+                    } else {
+                        document.body.classList.remove('font-ar');
+                        document.body.classList.add('font-it');
+                    }
+                }, { immediate: true });
+
+                const toggleLang = () => { locale.value = locale.value === 'ar' ? 'it' : 'ar'; };
+
+                // --- Navigation Logic ---
+                const navItems = [
+                    { key: 'home', icon: 'fas fa-home', link: 'index.html' },
+                    { key: 'agpeya', icon: 'fas fa-clock', link: 'agpeya.html' },
+                    { key: 'euchologion', icon: 'fas fa-book-open', link: 'kholagy.html' },
+                    { key: 'katamars', icon: 'fas fa-book-bible', link: 'katamars.html' },
+                    { key: 'synaxarium', icon: 'fas fa-scroll', link: 'synaxarium.html' },
+                    { key: 'more', icon: 'fas fa-ellipsis-h', link: 'index.html' },
+                    { key: 'contactUs', icon: 'fas fa-envelope', link: 'contact.html' },
+                ];
+
+                const handleNavigation = (item) => {
+                    if (item.link && item.link !== '#') {
+                        window.location.href = item.link;
+                    }
+                };
+
+                // --- Data & Events ---
+                const currentDate = computed(() => {
+                    const d = new Date();
+                    return d.toLocaleDateString(locale.value === 'ar' ? 'ar-EG' : 'it-IT', { 
+                        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
+                    });
+                });
+
+                const copticDate = computed(() => {
+                    return locale.value === 'ar' ? "٢٣ برمهات ١٧٤١ ش" : "23 Baramhat 1741 AM";
+                });
+
+                // Dummy Events
+                const events = [
+                    { 
+                        type: 'martyrdom', typeKey: 'typeMartyrdom', 
+                        titleKey: 'event1Title', summaryKey: 'event1Summary', 
+                        icon: 'fas fa-tint' 
+                    },
+                    { 
+                        type: 'departure', typeKey: 'typeDeparture', 
+                        titleKey: 'event2Title', summaryKey: 'event2Summary', 
+                        icon: 'fas fa-bed' 
+                    },
+                    { 
+                        type: 'feast', typeKey: 'typeFeast', 
+                        titleKey: 'event3Title', summaryKey: 'event3Summary', 
+                        icon: 'fas fa-star' 
+                    },
+                ];
+
+                // Styling Helpers
+                const getTypeColorClass = (type) => {
+                    if (type === 'martyrdom') return 'bg-coptic-martyr';
+                    if (type === 'departure') return 'bg-gray-800'; // Dark/Black for departure
+                    if (type === 'feast') return 'bg-coptic-feast';
+                    return 'bg-coptic-burgundy';
+                };
+
+                const getTypeTextClass = (type) => {
+                    if (type === 'martyrdom') return 'text-coptic-martyr';
+                    if (type === 'departure') return 'text-gray-800';
+                    if (type === 'feast') return 'text-coptic-feast';
+                    return 'text-coptic-burgundy';
+                };
+
+                return {
+                    t, locale, toggleLang,
+                    toLocalDigits,
+                    currentDate, copticDate,
+                    navItems, handleNavigation, mobileMenuOpen,
+                    events, getTypeColorClass, getTypeTextClass
+                };
+            }
+        });
+
+        app.use(i18n);
+        app.mount('#app');
+    </script>
+</body>
+</html>

@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>St. Mark Church - The Holy Kholagy</title>
+    
+    <!-- Vue 3 & Vue I18n -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/vue-i18n@9"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Config (Matches Main Site) -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        coptic: {
+                            burgundy: '#580a0a',
+                            gold: '#c5a059',
+                            beige: '#f9f7f2',
+                            text: '#2d3748',
+                            light: '#ffffff'
+                        }
+                    },
+                    fontFamily: {
+                        ar: ['Cairo', 'sans-serif'],
+                        arSerif: ['Amiri', 'serif'],
+                        it: ['Lato', 'sans-serif'],
+                        itSerif: ['Playfair Display', 'serif'],
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Shared Styles */
+        body { background-color: #f9f7f2; color: #2d3748; transition: all 0.3s ease; }
+        
+        /* Language Typography */
+        :root[lang="ar"] body { font-family: 'Cairo', sans-serif; }
+        :root[lang="it"] body { font-family: 'Lato', sans-serif; }
+        :root[lang="ar"] h1, :root[lang="ar"] h2, :root[lang="ar"] h3 { font-family: 'Amiri', serif; }
+        :root[lang="it"] h1, :root[lang="it"] h2, :root[lang="it"] h3 { font-family: 'Playfair Display', serif; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #c5a059; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #580a0a; }
+
+        /* Pattern */
+        .bg-pattern {
+            background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 4v12M4 10h12' stroke='%23c5a059' stroke-width='1' opacity='0.15'/%3E%3C/svg%3E");
+        }
+        
+        /* Transitions */
+        .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+        .fade-enter-from, .fade-leave-to { opacity: 0; }
+        
+        .slide-fade-enter-active { transition: all 0.3s ease-out; }
+        .slide-fade-leave-active { transition: all 0.3s cubic-bezier(1, 0.5, 0.8, 1); }
+        .slide-fade-enter-from, .slide-fade-leave-to { transform: translateY(10px); opacity: 0; }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+
+    <div id="app" class="flex flex-col min-h-screen">
+        
+        <!-- ================= Navbar (Unified) ================= -->
+        <nav class="bg-white shadow-md sticky top-0 z-50">
+            <div class="container mx-auto px-4">
+                <div class="flex justify-between items-center h-20">
+                    <!-- Logo / Brand -->
+                    <div class="flex items-center gap-3 cursor-pointer" @click="handleNavigation({ link: 'index.html' })">
+                        <div class="w-10 h-10 bg-coptic-burgundy text-white rounded-full flex items-center justify-center text-xl shadow-lg border-2 border-coptic-gold">
+                            <i class="fas fa-church"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-coptic-burgundy font-bold text-lg leading-tight">{{ t('churchName') }}</span>
+                            <span class="text-xs text-gray-500">{{ t('city') }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Desktop Menu -->
+                    <div class="hidden md:flex items-center gap-1 lg:gap-4">
+                        <button v-for="item in navItems" :key="item.key" 
+                           @click="handleNavigation(item)"
+                           :class="(item.key === 'euchologion') ? 'bg-coptic-burgundy/5 text-coptic-burgundy font-bold' : 'text-coptic-text hover:text-coptic-burgundy hover:bg-gray-50'"
+                           class="px-3 py-2 rounded-md transition font-medium flex items-center gap-2">
+                            <i :class="item.icon" class="text-coptic-gold text-sm"></i>
+                            {{ t(item.key) }}
+                        </button>
+                    </div>
+
+                    <!-- Right Side: Lang Switcher & Mobile Toggle -->
+                    <div class="flex items-center gap-3">
+                        <button @click="toggleLang" class="flex items-center gap-2 px-4 py-1.5 border border-coptic-burgundy/20 rounded-full hover:bg-coptic-burgundy hover:text-white transition text-sm font-bold text-coptic-burgundy">
+                            <i class="fas fa-globe"></i>
+                            <span>{{ locale === 'ar' ? 'Italiano' : 'العربية' }}</span>
+                        </button>
+
+                        <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden text-coptic-burgundy text-2xl p-2">
+                            <i :class="mobileMenuOpen ? 'fas fa-times' : 'fas fa-bars'"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile Menu -->
+            <transition name="fade">
+                <div v-if="mobileMenuOpen" class="md:hidden bg-white border-t border-gray-100 absolute w-full shadow-lg z-50">
+                    <div class="flex flex-col p-4 gap-2">
+                        <button v-for="item in navItems" :key="item.key" 
+                           @click="handleNavigation(item); mobileMenuOpen = false"
+                           class="p-3 hover:bg-gray-50 rounded-lg flex items-center gap-3 text-coptic-burgundy w-full text-start">
+                            <div class="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center">
+                                <i :class="item.icon"></i>
+                            </div>
+                            {{ t(item.key) }}
+                        </button>
+                    </div>
+                </div>
+            </transition>
+        </nav>
+
+        <!-- ================= Main Content ================= -->
+        <main class="flex-grow">
+            
+            <!-- 1. Hero Section -->
+            <section class="bg-coptic-burgundy text-white pt-16 pb-20 relative overflow-hidden">
+                <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/arabesque.png')]"></div>
+                <!-- Decorative Icon -->
+                <i class="fas fa-wine-glass-alt absolute -bottom-10 -left-10 text-9xl text-white opacity-5 rotate-12"></i>
+                
+                <div class="container mx-auto px-4 text-center relative z-10">
+                    <h1 class="text-4xl md:text-5xl font-bold font-serif mb-4">{{ t('kholagyTitle') }}</h1>
+                    <p class="text-lg text-blue-100 max-w-2xl mx-auto font-light leading-relaxed">
+                        {{ t('kholagyDesc') }}
+                    </p>
+                </div>
+            </section>
+
+            <!-- 2. Liturgy Types (Cards) -->
+            <section class="py-16 bg-coptic-beige bg-pattern -mt-10">
+                <div class="container mx-auto px-4 relative z-20">
+                    <div class="text-center mb-10">
+                        <h2 class="text-3xl font-bold text-coptic-burgundy">{{ t('liturgyTypesTitle') }}</h2>
+                        <div class="w-16 h-1 bg-coptic-gold mx-auto mt-3 rounded-full"></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                        <div v-for="(liturgy, index) in liturgies" :key="index" 
+                             class="bg-white rounded-xl shadow-lg p-8 text-center border-b-4 border-coptic-gold transform transition hover:-translate-y-2 hover:shadow-2xl group cursor-pointer">
+                            <div class="w-20 h-20 bg-coptic-burgundy/5 text-coptic-burgundy rounded-full flex items-center justify-center text-3xl mx-auto mb-6 group-hover:bg-coptic-burgundy group-hover:text-white transition-colors duration-300">
+                                <i :class="liturgy.icon"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800 mb-3 font-serif">{{ t(liturgy.titleKey) }}</h3>
+                            <p class="text-sm text-gray-500 leading-relaxed">{{ t(liturgy.descKey) }}</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. Main Content: Order & Texts -->
+            <section class="py-16 bg-white">
+                <div class="container mx-auto px-4 max-w-6xl">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+                        
+                        <!-- Left Column: Timeline & Texts -->
+                        <div class="lg:col-span-2 space-y-12">
+                            
+                            <!-- Timeline (Order of Liturgy) -->
+                            <div>
+                                <h2 class="text-2xl font-bold text-coptic-burgundy mb-8 flex items-center gap-3">
+                                    <i class="fas fa-list-ol text-coptic-gold"></i>
+                                    {{ t('orderTitle') }}
+                                </h2>
+                                
+                                <div class="relative border-s-2 border-gray-200 ms-4 space-y-8">
+                                    <div v-for="(step, index) in liturgySteps" :key="index" class="relative ps-8">
+                                        <!-- Dot -->
+                                        <div class="absolute -start-[9px] top-1 w-4 h-4 rounded-full bg-white border-4 border-coptic-gold"></div>
+                                        
+                                        <!-- Content -->
+                                        <div class="bg-gray-50 p-4 rounded-lg border border-gray-100 hover:shadow-md transition group">
+                                            <h3 class="text-lg font-bold text-coptic-burgundy mb-1 flex items-center gap-2">
+                                                {{ t(step.titleKey) }}
+                                                <i class="fas fa-chevron-left text-xs text-gray-300 opacity-0 group-hover:opacity-100 transition rtl:rotate-0 ltr:rotate-180"></i>
+                                            </h3>
+                                            <p class="text-sm text-gray-600">{{ t(step.descKey) }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Interactive Texts Section (Tabs) -->
+                            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                                <div class="bg-gray-50 border-b border-gray-200 p-4 flex flex-wrap gap-2">
+                                    <h3 class="w-full text-lg font-bold text-gray-800 mb-2">{{ t('textsTitle') }}</h3>
+                                    <button v-for="tab in textTabs" :key="tab.key" 
+                                            @click="activeTextTab = tab.key"
+                                            :class="activeTextTab === tab.key ? 'bg-coptic-burgundy text-white shadow-md' : 'bg-white text-gray-600 hover:bg-gray-100'"
+                                            class="px-4 py-2 rounded-full text-sm font-bold transition duration-300 border border-transparent">
+                                        {{ t(tab.labelKey) }}
+                                    </button>
+                                </div>
+                                <div class="p-6">
+                                    <transition name="slide-fade" mode="out-in">
+                                        <div :key="activeTextTab">
+                                            <h4 class="font-bold text-coptic-gold mb-3 text-lg font-serif">{{ t('sampleTextTitle') }}</h4>
+                                            <p class="text-gray-700 leading-8 text-justify font-serif text-lg mb-6 bg-yellow-50/50 p-4 rounded-lg border border-yellow-100">
+                                                {{ t(currentTextContent) }}
+                                            </p>
+                                            <button class="flex items-center gap-2 text-coptic-burgundy font-bold hover:underline">
+                                                <i class="fas fa-book-open"></i> {{ t('viewFullText') }}
+                                            </button>
+                                        </div>
+                                    </transition>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Right Column: Info & Comparison -->
+                        <div class="lg:col-span-1 space-y-8">
+                            
+                            <!-- Liturgical Info -->
+                            <div class="bg-coptic-burgundy/5 p-6 rounded-xl border border-coptic-burgundy/10">
+                                <h3 class="font-bold text-coptic-burgundy mb-4 border-b border-coptic-burgundy/10 pb-2 flex items-center gap-2">
+                                    <i class="fas fa-info-circle"></i>
+                                    {{ t('infoTitle') }}
+                                </h3>
+                                <p class="text-sm text-gray-700 leading-relaxed mb-4 text-justify">
+                                    {{ t('infoText') }}
+                                </p>
+                                <div class="bg-white p-4 rounded-lg shadow-sm">
+                                    <h4 class="font-bold text-xs text-coptic-gold uppercase mb-1">{{ t('wordMeaning') }}</h4>
+                                    <p class="text-xs text-gray-600">{{ t('wordMeaningText') }}</p>
+                                </div>
+                            </div>
+
+                            <!-- Comparison -->
+                            <div>
+                                <h3 class="font-bold text-gray-800 mb-4">{{ t('comparisonTitle') }}</h3>
+                                <div class="space-y-3">
+                                    <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-coptic-gold flex items-start gap-3">
+                                        <div class="mt-1"><i class="fas fa-book-open text-coptic-burgundy"></i></div>
+                                        <div>
+                                            <h4 class="font-bold text-sm text-coptic-burgundy">{{ t('kholagyTitle') }}</h4>
+                                            <p class="text-xs text-gray-500">{{ t('kholagyDef') }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-gray-300 flex items-start gap-3 opacity-80">
+                                        <div class="mt-1"><i class="fas fa-book-bible text-gray-600"></i></div>
+                                        <div>
+                                            <h4 class="font-bold text-sm text-gray-700">{{ t('katamarsTitle') }}</h4>
+                                            <p class="text-xs text-gray-500">{{ t('katamarsDef') }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-gray-300 flex items-start gap-3 opacity-80">
+                                        <div class="mt-1"><i class="fas fa-scroll text-gray-600"></i></div>
+                                        <div>
+                                            <h4 class="font-bold text-sm text-gray-700">{{ t('synaxariumTitle') }}</h4>
+                                            <p class="text-xs text-gray-500">{{ t('synaxariumDef') }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Spiritual Meditation -->
+                            <div class="bg-gradient-to-br from-coptic-burgundy to-red-900 text-white rounded-xl p-6 text-center relative overflow-hidden shadow-lg">
+                                <div class="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/arabesque.png')]"></div>
+                                <i class="fas fa-praying-hands text-2xl mb-3 text-coptic-gold relative z-10"></i>
+                                <h3 class="font-bold mb-3 relative z-10 font-serif">{{ t('meditationTitle') }}</h3>
+                                <p class="text-sm italic leading-relaxed relative z-10 opacity-90">
+                                    "{{ t('meditationText') }}"
+                                </p>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- ================= Footer ================= -->
+        <footer class="bg-coptic-burgundy text-white pt-16 pb-8 border-t-4 border-coptic-gold">
+            <div class="container mx-auto px-4">
+                <div class="text-center mb-8">
+                    <i class="fas fa-church text-3xl text-coptic-gold mb-3"></i>
+                    <h3 class="text-xl font-bold font-serif">{{ t('churchName') }}</h3>
+                </div>
+                <div class="border-t border-white/10 pt-8 text-center text-sm text-red-200">
+                    <p>&copy; {{ toLocalDigits('2025') }} {{ t('churchName') }}. {{ t('copyrights') }}</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Vue App Logic -->
+    <script>
+        const { createApp, ref, computed, watch } = Vue;
+        const { createI18n, useI18n } = VueI18n;
+
+        // --- Translation Data ---
+        const messages = {
+            ar: {
+                // Shared
+                churchName: "ام النور",
+                city: "إيطاليا",
+                home: "الرئيسية",
+                agpeya: "الأجبية",
+                euchologion: "الخولاجي",
+                katamars: "القطمارس",
+                synaxarium: "السنكسار",
+                more: "المزيد",
+                contactUs: "اتصل بنا",
+                copyrights: "جميع الحقوق محفوظة",
+
+                // Page Specific
+                kholagyTitle: "الخولاجي المقدس",
+                kholagyDesc: "كتاب الصلوات الليتورجية، قلب العبادة القبطية، حيث يجتمع الشعب حول المذبح للاشتراك في سر التناول المقدس.",
+                
+                liturgyTypesTitle: "أنواع القداسات",
+                
+                basilTitle: "القداس الباسيلي",
+                basilDesc: "منسوب للقديس باسيليوس الكبير، موجه للآب، وهو الأكثر استخداماً في الكنيسة طوال العام.",
+                
+                gregoryTitle: "القداس الغريغوري",
+                gregoryDesc: "منسوب للقديس غريغوريوس الناطق بالإلهيات، موجه للابن، ويُصلى به في الأعياد السيدية (الميلاد، الغطاس، القيامة).",
+                
+                cyrilTitle: "القداس الكيرلسي",
+                cyrilDesc: "وضعه القديس مرقس الرسول ورتبه القديس كيرلس الكبير، موجه للآب، ويتميز بطابعه اللاهوتي العميق.",
+
+                orderTitle: "ترتيب القداس الإلهي",
+                stepMatins: "رفع بخور باكر",
+                stepMatinsDesc: "بداية الخدمة بالتسابيح وصلوات الشكر ورفع البخور.",
+                stepOffertory: "تقديم الحمل",
+                stepOffertoryDesc: "اختيار الحمل (الخبز) والخمر للصلاة عليهما.",
+                stepReadings: "قراءات الكلمة",
+                stepReadingsDesc: "قراءة البولس والكاثوليكون والإبركسيس والمزمور والإنجيل.",
+                stepReconciliation: "صلاة الصلح",
+                stepReconciliationDesc: "إعلان المصالحة بين الله والإنسان وبين المؤمنين بعضهم البعض.",
+                stepAnaphora: "الأنافورا (التقديس)",
+                stepAnaphoraDesc: "حلول الروح القدس وتحول الخبز والخمر إلى جسد ودم المسيح.",
+                stepFraction: "القسمة",
+                stepFractionDesc: "تقسيم الجسد المقدس مصحوباً بصلوات خاشعة.",
+                stepCommunion: "التناول",
+                stepCommunionDesc: "توزيع الأسرار المقدسة على المؤمنين.",
+
+                textsTitle: "نصوص الخولاجي",
+                tabReconciliation: "صلاة الصلح",
+                tabInstitution: "سّر التأسيس",
+                tabEpiclesis: "استدعاء الروح القدس",
+                
+                textReconciliation: "يا الله العظيم الأبدي، الذي جبل الإنسان على غير فساد، والموت الذي دخل إلى العالم بحسد إبليس هدمته... املأ قلوبنا من سلامك.",
+                textInstitution: "لأنه في الليلة التي أسلم فيها ذاته، أخذ خبزاً على يديه الطاهرتين، وشكر وباركه وقدسه...",
+                textEpiclesis: "ونسألك أيها الرب إلهنا... ليحل روحك القدوس علينا وعلى هذه القرابين الموضوعة، ويطهرها وينقلها.",
+                
+                sampleTextTitle: "مقتطف من النص",
+                viewFullText: "عرض النص الكامل",
+
+                infoTitle: "معلومة طقسية",
+                infoText: "الخولاجي هو الكتاب الذي يستخدمه الكاهن والشماس والشعب للصلاة أثناء القداس. يحتوي على الصلوات الثابتة والمتغيرة حسب المناسبة الطقسية.",
+                wordMeaning: "معنى الكلمة",
+                wordMeaningText: "كلمة 'خولاجي' (Euchologion) يونانية تعني 'كتاب الصلوات' أو 'الصلوات الجيدة'.",
+
+                comparisonTitle: "مقارنة الكتب الطقسية",
+                kholagyDef: "صلوات القداس والأسرار.",
+                katamarsTitle: "القطمارس",
+                katamarsDef: "قراءات الكتاب المقدس.",
+                synaxariumTitle: "السنكسار",
+                synaxariumDef: "سير القديسين والتاريخ.",
+
+                meditationTitle: "تأمل روحي",
+                meditationText: "في القداس، لا نذكر فقط ما فعله المسيح في الماضي، بل نحيا الحدث وكأنه يحدث الآن. السماء تنزل إلى الأرض، ونحن نرتفع إلى العرش الإلهي.",
+            },
+            it: {
+                // Shared
+                churchName: "Madre della Luce",
+                city: "Italia",
+                home: "Home",
+                agpeya: "Agpeya",
+                euchologion: "Eucologio",
+                katamars: "Katamars",
+                synaxarium: "Sinassario",
+                more: "Altro",
+                contactUs: "Contattaci",
+                copyrights: "Tutti i diritti riservati",
+
+                // Page Specific
+                kholagyTitle: "Il Santo Eucologio",
+                kholagyDesc: "Il libro delle preghiere liturgiche, cuore del culto copto, dove il popolo si riunisce attorno all'altare per partecipare alla Santa Comunione.",
+                
+                liturgyTypesTitle: "Tipi di Liturgie",
+                
+                basilTitle: "San Basilio",
+                basilDesc: "Attribuito a San Basilio Magno, rivolto al Padre, è il più usato nella Chiesa durante tutto l'anno.",
+                
+                gregoryTitle: "San Gregorio",
+                gregoryDesc: "Attribuito a San Gregorio il Teologo, rivolto al Figlio, usato nelle feste maggiori (Natale, Epifania, Pasqua).",
+                
+                cyrilTitle: "San Cirillo",
+                cyrilDesc: "Originato da San Marco e arrangiato da San Cirillo, rivolto al Padre, noto per la sua profondità teologica.",
+
+                orderTitle: "Ordine della Liturgia",
+                stepMatins: "Mattutino (Lodi)",
+                stepMatinsDesc: "Inizio con lodi, preghiere di ringraziamento e incenso.",
+                stepOffertory: "Offertorio",
+                stepOffertoryDesc: "Scelta dell'Agnello (pane) e del vino.",
+                stepReadings: "Liturgia della Parola",
+                stepReadingsDesc: "Letture dalle Epistole, Atti, Salmo e Vangelo.",
+                stepReconciliation: "Preghiera di Riconciliazione",
+                stepReconciliationDesc: "Dichiarazione di pace tra Dio e l'uomo e tra i fedeli.",
+                stepAnaphora: "Anafora (Consacrazione)",
+                stepAnaphoraDesc: "Discesa dello Spirito Santo e trasformazione del pane e del vino.",
+                stepFraction: "Frazione",
+                stepFractionDesc: "Spezzare il Santo Corpo con preghiere reverenti.",
+                stepCommunion: "Comunione",
+                stepCommunionDesc: "Distribuzione dei Santi Misteri ai fedeli.",
+
+                textsTitle: "Testi Eucologici",
+                tabReconciliation: "Riconciliazione",
+                tabInstitution: "Istituzione",
+                tabEpiclesis: "Epiclesi",
+                
+                textReconciliation: "O Dio Grande ed Eterno, che hai creato l'uomo nell'incorruttibilità... riempi i nostri cuori della tua pace.",
+                textInstitution: "Poiché nella notte in cui fu tradito, prese il pane nelle sue mani sante...",
+                textEpiclesis: "Ti chiediamo, Signore nostro Dio... che il tuo Spirito Santo scenda su di noi e su questi doni.",
+                
+                sampleTextTitle: "Estratto",
+                viewFullText: "Vedi Testo Completo",
+
+                infoTitle: "Info Liturgica",
+                infoText: "L'Eucologio è il libro usato dal sacerdote, diacono e popolo durante la Messa. Contiene preghiere fisse e variabili.",
+                wordMeaning: "Significato",
+                wordMeaningText: "La parola 'Euchologion' è greca e significa 'libro di preghiere' o 'buone parole'.",
+
+                comparisonTitle: "Confronto Libri",
+                kholagyDef: "Preghiere della Messa.",
+                katamarsTitle: "Katamars",
+                katamarsDef: "Letture Bibliche.",
+                synaxariumTitle: "Sinassario",
+                synaxariumDef: "Vite dei Santi.",
+
+                meditationTitle: "Meditazione",
+                meditationText: "Nella Liturgia, non ricordiamo solo il passato, ma viviamo l'evento ora. Il cielo scende sulla terra e noi saliamo al trono divino.",
+            }
+        };
+
+        const i18n = createI18n({
+            locale: 'ar',
+            fallbackLocale: 'en',
+            messages,
+            legacy: false
+        });
+
+        const app = createApp({
+            setup() {
+                const { t, locale } = useI18n();
+                const mobileMenuOpen = ref(false);
+                const activeTextTab = ref('reconciliation');
+
+                // --- Helper Functions ---
+                const toLocalDigits = (str) => {
+                    if (!str) return '';
+                    if (locale.value !== 'ar') return str;
+                    return str.toString().replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
+                };
+
+                // --- Direction Logic ---
+                watch(locale, (newLang) => {
+                    document.documentElement.setAttribute('lang', newLang);
+                    document.documentElement.setAttribute('dir', newLang === 'ar' ? 'rtl' : 'ltr');
+                    if(newLang === 'ar') {
+                        document.body.classList.remove('font-it');
+                        document.body.classList.add('font-ar');
+                    } else {
+                        document.body.classList.remove('font-ar');
+                        document.body.classList.add('font-it');
+                    }
+                }, { immediate: true });
+
+                const toggleLang = () => { locale.value = locale.value === 'ar' ? 'it' : 'ar'; };
+
+                // --- Navigation Logic ---
+                const navItems = [
+                    { key: 'home', icon: 'fas fa-home', link: 'index.html' },
+                    { key: 'agpeya', icon: 'fas fa-clock', link: 'agpeya.html' },
+                    { key: 'euchologion', icon: 'fas fa-book-open', link: 'kholagy.html' },
+                    { key: 'katamars', icon: 'fas fa-book-bible', link: 'katamars.html' },
+                    { key: 'synaxarium', icon: 'fas fa-scroll', link: 'synaxarium.html' },
+                    { key: 'more', icon: 'fas fa-ellipsis-h', link: 'index.html' },
+                    { key: 'contactUs', icon: 'fas fa-envelope', link: 'contact.html' },
+                ];
+
+                const handleNavigation = (item) => {
+                    if (item.link && item.link !== '#') {
+                        window.location.href = item.link;
+                    }
+                };
+
+                // --- Data: Liturgies ---
+                const liturgies = [
+                    { titleKey: 'basilTitle', descKey: 'basilDesc', icon: 'fas fa-bread-slice' },
+                    { titleKey: 'gregoryTitle', descKey: 'gregoryDesc', icon: 'fas fa-praying-hands' },
+                    { titleKey: 'cyrilTitle', descKey: 'cyrilDesc', icon: 'fas fa-scroll' }
+                ];
+
+                // --- Data: Order Steps ---
+                const liturgySteps = [
+                    { titleKey: 'stepMatins', descKey: 'stepMatinsDesc' },
+                    { titleKey: 'stepOffertory', descKey: 'stepOffertoryDesc' },
+                    { titleKey: 'stepReadings', descKey: 'stepReadingsDesc' },
+                    { titleKey: 'stepReconciliation', descKey: 'stepReconciliationDesc' },
+                    { titleKey: 'stepAnaphora', descKey: 'stepAnaphoraDesc' },
+                    { titleKey: 'stepFraction', descKey: 'stepFractionDesc' },
+                    { titleKey: 'stepCommunion', descKey: 'stepCommunionDesc' },
+                ];
+
+                // --- Data: Tabs ---
+                const textTabs = [
+                    { key: 'reconciliation', labelKey: 'tabReconciliation' },
+                    { key: 'institution', labelKey: 'tabInstitution' },
+                    { key: 'epiclesis', labelKey: 'tabEpiclesis' },
+                ];
+
+                const currentTextContent = computed(() => {
+                    if (activeTextTab.value === 'reconciliation') return 'textReconciliation';
+                    if (activeTextTab.value === 'institution') return 'textInstitution';
+                    if (activeTextTab.value === 'epiclesis') return 'textEpiclesis';
+                    return '';
+                });
+
+                return {
+                    t, locale, toggleLang,
+                    toLocalDigits,
+                    navItems, handleNavigation, mobileMenuOpen,
+                    liturgies, liturgySteps,
+                    textTabs, activeTextTab, currentTextContent
+                };
+            }
+        });
+
+        app.use(i18n);
+        app.mount('#app');
+    </script>
+</body>
+</html>

@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>St. Mark Church - Agpeya (The Book of Hours)</title>
+    
+    <!-- Vue 3 & Vue I18n -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/vue-i18n@9"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Config (Matches Main Site) -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        coptic: {
+                            burgundy: '#580a0a',
+                            gold: '#c5a059',
+                            beige: '#f9f7f2',
+                            text: '#2d3748',
+                            light: '#ffffff'
+                        }
+                    },
+                    fontFamily: {
+                        ar: ['Cairo', 'sans-serif'],
+                        arSerif: ['Amiri', 'serif'],
+                        it: ['Lato', 'sans-serif'],
+                        itSerif: ['Playfair Display', 'serif'],
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Shared Styles */
+        body { background-color: #f9f7f2; color: #2d3748; transition: all 0.3s ease; }
+        
+        /* Language Typography */
+        :root[lang="ar"] body { font-family: 'Cairo', sans-serif; }
+        :root[lang="it"] body { font-family: 'Lato', sans-serif; }
+        :root[lang="ar"] h1, :root[lang="ar"] h2, :root[lang="ar"] h3 { font-family: 'Amiri', serif; }
+        :root[lang="it"] h1, :root[lang="it"] h2, :root[lang="it"] h3 { font-family: 'Playfair Display', serif; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #c5a059; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #580a0a; }
+
+        /* Pattern */
+        .bg-pattern {
+            background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 4v12M4 10h12' stroke='%23c5a059' stroke-width='1' opacity='0.15'/%3E%3C/svg%3E");
+        }
+
+        /* Tooltip Arrow */
+        .tooltip-arrow::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -6px;
+            border-width: 6px;
+            border-style: solid;
+            border-color: #2d3748 transparent transparent transparent;
+        }
+
+        /* Active Card Style */
+        .active-hour-card {
+            border-color: #c5a059 !important;
+            background-color: #fffaf0 !important;
+            box-shadow: 0 4px 20px rgba(197, 160, 89, 0.25);
+            transform: translateY(-5px);
+        }
+        
+        .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+        .fade-enter-from, .fade-leave-to { opacity: 0; }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+
+    <div id="app" class="flex flex-col min-h-screen">
+        
+        <!-- ================= Navbar (Unified) ================= -->
+        <nav class="bg-white shadow-md sticky top-0 z-50">
+            <div class="container mx-auto px-4">
+                <div class="flex justify-between items-center h-20">
+                    <!-- Logo / Brand -->
+                    <div class="flex items-center gap-3 cursor-pointer" @click="handleNavigation({ link: 'index.html' })">
+                        <div class="w-10 h-10 bg-coptic-burgundy text-white rounded-full flex items-center justify-center text-xl shadow-lg border-2 border-coptic-gold">
+                            <i class="fas fa-church"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-coptic-burgundy font-bold text-lg leading-tight">{{ t('churchName') }}</span>
+                            <span class="text-xs text-gray-500">{{ t('city') }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Desktop Menu -->
+                    <div class="hidden md:flex items-center gap-1 lg:gap-4">
+                        <button v-for="item in navItems" :key="item.key" 
+                           @click="handleNavigation(item)"
+                           :class="(item.key === 'agpeya') ? 'bg-coptic-burgundy/5 text-coptic-burgundy font-bold' : 'text-coptic-text hover:text-coptic-burgundy hover:bg-gray-50'"
+                           class="px-3 py-2 rounded-md transition font-medium flex items-center gap-2">
+                            <i :class="item.icon" class="text-coptic-gold text-sm"></i>
+                            {{ t(item.key) }}
+                        </button>
+                    </div>
+
+                    <!-- Right Side: Lang Switcher & Mobile Toggle -->
+                    <div class="flex items-center gap-3">
+                        <button @click="toggleLang" class="flex items-center gap-2 px-4 py-1.5 border border-coptic-burgundy/20 rounded-full hover:bg-coptic-burgundy hover:text-white transition text-sm font-bold text-coptic-burgundy">
+                            <i class="fas fa-globe"></i>
+                            <span>{{ locale === 'ar' ? 'Italiano' : 'العربية' }}</span>
+                        </button>
+
+                        <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden text-coptic-burgundy text-2xl p-2">
+                            <i :class="mobileMenuOpen ? 'fas fa-times' : 'fas fa-bars'"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile Menu -->
+            <transition name="fade">
+                <div v-if="mobileMenuOpen" class="md:hidden bg-white border-t border-gray-100 absolute w-full shadow-lg z-50">
+                    <div class="flex flex-col p-4 gap-2">
+                        <button v-for="item in navItems" :key="item.key" 
+                           @click="handleNavigation(item); mobileMenuOpen = false"
+                           class="p-3 hover:bg-gray-50 rounded-lg flex items-center gap-3 text-coptic-burgundy w-full text-start">
+                            <div class="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center">
+                                <i :class="item.icon"></i>
+                            </div>
+                            {{ t(item.key) }}
+                        </button>
+                    </div>
+                </div>
+            </transition>
+        </nav>
+
+        <!-- ================= Main Content ================= -->
+        <main class="flex-grow">
+            
+            <!-- 1. Hero Section -->
+            <section class="bg-coptic-burgundy text-white py-20 relative overflow-hidden">
+                <div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/arabesque.png')]"></div>
+                <!-- Decorative big icon -->
+                <i class="fas fa-praying-hands absolute -bottom-10 -left-10 text-9xl text-white opacity-5"></i>
+                
+                <div class="container mx-auto px-4 text-center relative z-10">
+                    <div class="inline-block p-3 rounded-full border-2 border-coptic-gold mb-6 bg-white/5 backdrop-blur-sm">
+                        <i class="fas fa-clock text-4xl text-coptic-gold"></i>
+                    </div>
+                    <h1 class="text-4xl md:text-6xl font-bold font-serif mb-6">{{ t('agpeyaTitle') }}</h1>
+                    <p class="text-xl text-blue-100 max-w-2xl mx-auto leading-relaxed font-light">
+                        {{ t('agpeyaDesc') }}
+                    </p>
+                </div>
+            </section>
+
+            <!-- 2. Hours Selection Grid -->
+            <section class="py-16 bg-coptic-beige bg-pattern">
+                <div class="container mx-auto px-4">
+                    <div class="text-center mb-12">
+                        <h2 class="text-3xl font-bold text-coptic-burgundy mb-2">{{ t('chooseHour') }}</h2>
+                        <p class="text-gray-500">{{ t('chooseHourSubtitle') }}</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 max-w-6xl mx-auto">
+                        <!-- Hour Card Component -->
+                        <div v-for="hour in hours" :key="hour.key" 
+                             class="group relative bg-white p-6 rounded-2xl border-2 border-transparent hover:border-coptic-gold/50 transition-all cursor-pointer flex flex-col items-center text-center shadow-sm hover:shadow-xl"
+                             :class="{ 'active-hour-card': activeHour === hour.key }"
+                             @click="toggleTooltip(hour.key)"
+                             @mouseenter="!isMobile && (activeTooltip = hour.key)"
+                             @mouseleave="!isMobile && (activeTooltip = null)">
+                            
+                            <!-- Active Indicator Badge -->
+                            <div v-if="activeHour === hour.key" class="absolute -top-3 px-3 py-1 bg-coptic-gold text-white text-xs font-bold rounded-full shadow-md animate-pulse">
+                                {{ t('currentPrayer') }}
+                            </div>
+
+                            <!-- Icon -->
+                            <div class="w-16 h-16 rounded-full bg-red-50 text-coptic-burgundy flex items-center justify-center text-2xl mb-4 group-hover:bg-coptic-burgundy group-hover:text-coptic-gold transition-colors duration-300">
+                                <i :class="hour.icon"></i>
+                            </div>
+
+                            <!-- Texts -->
+                            <h3 class="font-bold text-xl text-gray-800 mb-2 font-serif">{{ t(hour.nameKey) }}</h3>
+                            <span class="text-xs text-gray-500 font-bold bg-gray-100 px-3 py-1 rounded-full">
+                                {{ toLocalDigits(t(hour.timeKey)) }}
+                            </span>
+
+                            <!-- Tooltip -->
+                            <div class="absolute bottom-full mb-3 w-48 bg-gray-800 text-white text-xs rounded-lg p-3 shadow-xl z-20 tooltip-arrow transition-all duration-300"
+                                 :class="[activeTooltip === hour.key ? 'opacity-100 visible' : 'opacity-0 invisible']">
+                                <p class="leading-relaxed">{{ t(hour.tooltipKey) }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. Liturgical & Psalms Info -->
+            <section class="py-16 bg-white">
+                <div class="container mx-auto px-4 max-w-6xl">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+                        
+                        <!-- Liturgical Info Box -->
+                        <div>
+                            <div class="flex items-center gap-3 mb-6">
+                                <div class="w-10 h-10 rounded-full bg-coptic-gold/20 flex items-center justify-center text-coptic-burgundy">
+                                    <i class="fas fa-info"></i>
+                                </div>
+                                <h2 class="text-2xl font-bold text-coptic-burgundy">{{ t('liturgicalInfoTitle') }}</h2>
+                            </div>
+                            <div class="prose prose-lg text-gray-600 leading-relaxed text-justify bg-gray-50 p-6 rounded-xl border border-gray-100">
+                                <p class="mb-4">{{ t('liturgicalInfoBody') }}</p>
+                                <p class="text-sm text-gray-500 italic border-t pt-4 mt-4 border-gray-200">
+                                    <i class="fas fa-quote-right mx-2 text-coptic-gold"></i>
+                                    {{ t('liturgicalQuote') }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Psalms Explanation Box (Visual) -->
+                        <div class="bg-blue-50/50 rounded-2xl p-8 border border-blue-100 relative overflow-hidden">
+                            <!-- Background decoration -->
+                            <div class="absolute top-0 right-0 w-32 h-32 bg-coptic-burgundy/5 rounded-full -mr-16 -mt-16"></div>
+                            
+                            <div class="flex items-center gap-3 mb-6 relative z-10">
+                                <i class="fas fa-book-open text-coptic-burgundy text-2xl"></i>
+                                <h2 class="text-xl md:text-2xl font-bold text-coptic-burgundy">{{ t('psalmsInfoTitle') }}</h2>
+                            </div>
+                            
+                            <p class="text-gray-600 mb-6 leading-relaxed relative z-10 text-justify text-sm md:text-base">
+                                {{ t('psalmsInfoBody') }}
+                            </p>
+                            
+                            <!-- Visual Comparison Widget -->
+                            <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden relative z-10 max-w-sm mx-auto transform hover:scale-105 transition duration-500">
+                                <div class="grid grid-cols-2 bg-coptic-burgundy text-white text-sm font-bold py-3 text-center">
+                                    <div>{{ t('septuagint') }} ({{ t('agpeya') }})</div>
+                                    <div>{{ t('hebrew') }} ({{ t('bible') }})</div>
+                                </div>
+                                <div class="grid grid-cols-2 text-center py-5 divide-x divide-x-reverse divide-gray-100 text-gray-800 font-bold text-lg">
+                                    <div class="text-coptic-burgundy flex flex-col items-center">
+                                        <span class="text-2xl">{{ toLocalDigits('50') }}</span>
+                                        <span class="text-xs font-normal text-gray-400 mt-1">{{ t('psalmExampleName') }}</span>
+                                    </div>
+                                    <div class="flex flex-col items-center opacity-60">
+                                        <span class="text-2xl">{{ toLocalDigits('51') }}</span>
+                                    </div>
+                                </div>
+                                <div class="bg-gray-50 p-3 text-center text-xs text-gray-500 border-t border-gray-100">
+                                    {{ t('psalmExample') }}
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- ================= Footer (Shared) ================= -->
+        <footer class="bg-coptic-burgundy text-white pt-16 pb-8 border-t-4 border-coptic-gold">
+            <div class="container mx-auto px-4">
+                <div class="text-center mb-8">
+                    <i class="fas fa-church text-3xl text-coptic-gold mb-3"></i>
+                    <h3 class="text-xl font-bold font-serif">{{ t('churchName') }}</h3>
+                </div>
+                <div class="border-t border-white/10 pt-8 text-center text-sm text-red-200">
+                    <p>&copy; {{ toLocalDigits('2025') }} {{ t('churchName') }}. {{ t('copyrights') }}</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Vue App Logic -->
+    <script>
+        const { createApp, ref, computed, watch, onMounted } = Vue;
+        const { createI18n, useI18n } = VueI18n;
+
+        // --- Translation Data ---
+        const messages = {
+            ar: {
+                // Navbar & Global
+                churchName: "ام النور",
+                city: "إيطاليا",
+                home: "الرئيسية",
+                agpeya: "الأجبية",
+                euchologion: "الخولاجي",
+                katamars: "القطمارس",
+                synaxarium: "السنكسار",
+                more: "المزيد",
+                contactUs: "اتصل بنا",
+
+                // Agpeya Specific
+                agpeyaTitle: "الأجبية (صلوات السواعي)",
+                agpeyaDesc: "صلاة السواعي هي سبع صلوات تُقام على مدار اليوم والليلة، بالإضافة إلى صلاة الستار، لتنظيم حياة المؤمن الروحية وتذكيره بأحداث الخلاص.",
+                chooseHour: "اختر الساعة للصلاة",
+                chooseHourSubtitle: "يتم تحديد الصلاة المناسبة للوقت الحالي تلقائياً",
+                currentPrayer: "الصلاة الحالية",
+                
+                // Hours & Tooltips
+                hourPrime: "باكر",
+                timePrime: "حوالي ٦ صباحاً",
+                tooltipPrime: "تذكار قيامة السيد المسيح، والنور الحقيقي الذي يضيء لكل إنسان.",
+                
+                hourTerce: "الثالثة",
+                timeTerce: "حوالي ٩ صباحاً",
+                tooltipTerce: "تذكار حلول الروح القدس، ومحاكمة السيد المسيح أمام بيلاطس.",
+                
+                hourSext: "السادسة",
+                timeSext: "حوالي ١٢ ظهراً",
+                tooltipSext: "تذكار صلب السيد المسيح، والآلام المحيية.",
+                
+                hourNone: "التاسعة",
+                timeNone: "حوالي ٣ عصراً",
+                tooltipNone: "تذكار موت السيد المسيح الجسدي على الصليب وقبول اللص اليمين.",
+                
+                hourVespers: "الغروب",
+                timeVespers: "حوالي ٥ مساءً",
+                tooltipVespers: "تذكار إنزال جسد المسيح من على الصليب وتكفينه.",
+                
+                hourCompline: "النوم",
+                timeCompline: "قبل الرقاد",
+                tooltipCompline: "تذكار وضع جسد المسيح في القبر، والتأمل في الموت والدينونة.",
+                
+                hourMidnight: "نصف الليل",
+                timeMidnight: "منتصف الليل",
+                tooltipMidnight: "تذكار المجيء الثاني للمسيح، والصلاة في ٣ خدمات.",
+                
+                hourVeil: "الستار",
+                timeVeil: "خاصة بالرهبان",
+                tooltipVeil: "تُصلى بعد الغروب، للتأمل في ستر الله علينا.",
+
+                // Liturgical Info
+                liturgicalInfoTitle: "معلومة طقسية عن الأجبية",
+                liturgicalInfoBody: "تعتمد صلوات الأجبية على المزامير كعنصر أساسي، لأن المزامير تحوي كل مشاعر النفس البشرية من توبة، وشكر، وتسبيح، وطلب معونة. وقد رتب الآباء هذه الصلوات لتوافق أحداث حياة السيد المسيح.",
+                liturgicalQuote: "سبع مرات في النهار سبحتك على أحكام عدلك (مزمور ١١٩: ١٦٤)",
+                
+                // Psalms Difference
+                psalmsInfoTitle: "لماذا تختلف أرقام المزامير؟",
+                psalmsInfoBody: "يختلف ترقيم المزامير في الأجبية (التي تعتمد على الترجمة السبعينية القبطية) عن الكتاب المقدس المطبوع (الذي يعتمد على النص العبري). عادة ما يكون رقم المزمور في الأجبية أقل برقم واحد عن الكتاب المقدس.",
+                septuagint: "السبعينية",
+                hebrew: "العبرية",
+                bible: "الإنجيل",
+                psalmExample: "مثال: مزمور التوبة (ارحمني يا الله...)",
+                psalmExampleName: "ارحمني يا الله",
+                copyrights: "جميع الحقوق محفوظة"
+            },
+            it: {
+                // Navbar & Global
+                churchName: "Madre della Luce",
+                city: "Italia",
+                home: "Home",
+                agpeya: "Agpeya",
+                euchologion: "Eucologio",
+                katamars: "Katamars",
+                synaxarium: "Sinassario",
+                more: "Altro",
+                contactUs: "Contattaci",
+
+                // Agpeya Specific
+                agpeyaTitle: "Agpeya (Liturgia delle Ore)",
+                agpeyaDesc: "La preghiera delle ore consiste in sette preghiere celebrate durante il giorno e la notte, oltre alla preghiera del velo, per santificare il tempo.",
+                chooseHour: "Scegli l'ora per pregare",
+                chooseHourSubtitle: "La preghiera appropriata viene selezionata automaticamente.",
+                currentPrayer: "Preghiera Attuale",
+                
+                hourPrime: "Prima",
+                timePrime: "Circa 6:00 Mattina",
+                tooltipPrime: "Commemorazione della Risurrezione di Cristo, la vera Luce.",
+                
+                hourTerce: "Terza",
+                timeTerce: "Circa 9:00 Mattina",
+                tooltipTerce: "Commemorazione della discesa dello Spirito Santo.",
+                
+                hourSext: "Sesta",
+                timeSext: "Circa 12:00 Mezzogiorno",
+                tooltipSext: "Commemorazione della Crocifissione di Cristo.",
+                
+                hourNone: "Nona",
+                timeNone: "Circa 15:00 Pomeriggio",
+                tooltipNone: "Commemorazione della morte di Cristo sulla Croce.",
+                
+                hourVespers: "Vespri",
+                timeVespers: "Circa 17:00 Sera",
+                tooltipVespers: "Commemorazione della deposizione di Cristo dalla Croce.",
+                
+                hourCompline: "Compieta",
+                timeCompline: "Prima di dormire",
+                tooltipCompline: "Commemorazione della sepoltura di Cristo.",
+                
+                hourMidnight: "Mezzanotte",
+                timeMidnight: "Mezzanotte",
+                tooltipMidnight: "Commemorazione della Seconda Venuta di Cristo.",
+                
+                hourVeil: "Velo",
+                timeVeil: "Per i Monaci",
+                tooltipVeil: "Preghiera serale monastica speciale.",
+
+                liturgicalInfoTitle: "Info Liturgica",
+                liturgicalInfoBody: "Le preghiere dell'Agpeya si basano sui Salmi come elemento essenziale, poiché contengono tutti i sentimenti dell'anima umana: pentimento, ringraziamento e lode.",
+                liturgicalQuote: "Sette volte al giorno ti ho lodato per i tuoi giusti giudizi. (Salmo 119:164)",
+                
+                psalmsInfoTitle: "Perché i numeri dei salmi differiscono?",
+                psalmsInfoBody: "La numerazione dei Salmi nell'Agpeya (Settanta) differisce dalla Bibbia stampata (traduzione ebraica). Solitamente, il numero del salmo nell'Agpeya è inferiore di uno rispetto alla Bibbia.",
+                septuagint: "Settanta",
+                hebrew: "Ebraica",
+                bible: "Bibbia",
+                psalmExample: "Es: Salmo del Pentimento",
+                psalmExampleName: "Abbi pietà di me",
+                copyrights: "Tutti i diritti riservati"
+            }
+        };
+
+        const i18n = createI18n({
+            locale: 'ar',
+            fallbackLocale: 'en',
+            messages,
+            legacy: false
+        });
+
+        const app = createApp({
+            setup() {
+                const { t, locale } = useI18n();
+                const activeHour = ref(null);
+                const activeTooltip = ref(null);
+                const isMobile = ref(false);
+                const mobileMenuOpen = ref(false); // Added for Navbar
+
+                // --- Helper Functions ---
+                const toLocalDigits = (str) => {
+                    if (locale.value !== 'ar') return str;
+                    return str.toString().replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
+                };
+
+                const checkMobile = () => {
+                    isMobile.value = window.innerWidth <= 768;
+                };
+
+                // --- Navigation Logic for Navbar ---
+                // Agpeya is the current page, so link is '#', others link to main page
+                const navItems = [
+                    { key: 'home', icon: 'fas fa-home', link: 'index.html' },
+                    { key: 'agpeya', icon: 'fas fa-clock', link: '#' },
+                    { key: 'euchologion', icon: 'fas fa-book-open', link: 'kholagy.html' },
+                    { key: 'katamars', icon: 'fas fa-book-bible', link: 'katamars.html' },
+                    { key: 'synaxarium', icon: 'fas fa-scroll', link: 'synaxarium.html' },
+                    { key: 'more', icon: 'fas fa-ellipsis-h', link: 'index.html' },
+                    { key: 'contactUs', icon: 'fas fa-envelope', link: 'contact.html' },
+                ];
+
+                const handleNavigation = (item) => {
+                    if (item.link && item.link !== '#') {
+                        window.location.href = item.link;
+                    }
+                };
+
+                // --- Direction Logic ---
+                watch(locale, (newLang) => {
+                    document.documentElement.setAttribute('lang', newLang);
+                    document.documentElement.setAttribute('dir', newLang === 'ar' ? 'rtl' : 'ltr');
+                    if(newLang === 'ar') {
+                        document.body.classList.remove('font-it');
+                        document.body.classList.add('font-ar');
+                    } else {
+                        document.body.classList.remove('font-ar');
+                        document.body.classList.add('font-it');
+                    }
+                }, { immediate: true });
+
+                const toggleLang = () => { locale.value = locale.value === 'ar' ? 'it' : 'ar'; };
+
+                // --- Time Logic ---
+                const updateActiveHour = () => {
+                    const h = new Date().getHours();
+                    let key = 'midnight'; // Default
+
+                    if (h >= 4 && h < 9) key = 'prime';
+                    else if (h >= 9 && h < 12) key = 'terce';
+                    else if (h >= 12 && h < 15) key = 'sext';
+                    else if (h >= 15 && h < 17) key = 'none';
+                    else if (h >= 17 && h < 20) key = 'vespers';
+                    else if (h >= 20 && h < 24) key = 'compline';
+                    else key = 'midnight';
+
+                    activeHour.value = key;
+                };
+
+                // --- Data ---
+                const hours = [
+                    { key: 'prime', nameKey: 'hourPrime', timeKey: 'timePrime', tooltipKey: 'tooltipPrime', icon: 'fas fa-sun' },
+                    { key: 'terce', nameKey: 'hourTerce', timeKey: 'timeTerce', tooltipKey: 'tooltipTerce', icon: 'fas fa-dove' },
+                    { key: 'sext', nameKey: 'hourSext', timeKey: 'timeSext', tooltipKey: 'tooltipSext', icon: 'fas fa-cross' },
+                    { key: 'none', nameKey: 'hourNone', timeKey: 'timeNone', tooltipKey: 'tooltipNone', icon: 'fas fa-church' },
+                    { key: 'vespers', nameKey: 'hourVespers', timeKey: 'timeVespers', tooltipKey: 'tooltipVespers', icon: 'fas fa-cloud-sun' },
+                    { key: 'compline', nameKey: 'hourCompline', timeKey: 'timeCompline', tooltipKey: 'tooltipCompline', icon: 'fas fa-bed' },
+                    { key: 'midnight', nameKey: 'hourMidnight', timeKey: 'timeMidnight', tooltipKey: 'tooltipMidnight', icon: 'fas fa-star' },
+                    { key: 'veil', nameKey: 'hourVeil', timeKey: 'timeVeil', tooltipKey: 'tooltipVeil', icon: 'fas fa-user-hood' },
+                ];
+
+                const toggleTooltip = (key) => {
+                    // Toggle for mobile, helpful for accessibility
+                    if (activeTooltip.value === key) activeTooltip.value = null;
+                    else activeTooltip.value = key;
+                };
+
+                onMounted(() => {
+                    updateActiveHour();
+                    checkMobile();
+                    window.addEventListener('resize', checkMobile);
+                    setInterval(updateActiveHour, 60000); // Check every minute
+                });
+
+                return {
+                    t, locale, toggleLang,
+                    toLocalDigits,
+                    hours, activeHour, activeTooltip, isMobile,
+                    toggleTooltip,
+                    navItems, handleNavigation, mobileMenuOpen // Returned for Navbar
+                };
+            }
+        });
+
+        app.use(i18n);
+        app.mount('#app');
+    </script>
+</body>
+</html>
